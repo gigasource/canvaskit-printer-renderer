@@ -1,0 +1,25 @@
+{
+  "name": "canvaskit-printer-renderer",
+  "version": "1.0.0",
+  "description": "Use canvaskit-wasm to render bill images for printers to print",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gigasource/canvaskit-printer-renderer.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gigasource/canvaskit-printer-renderer/issues"
+  },
+  "homepage": "https://github.com/gigasource/canvaskit-printer-renderer#readme",
+  "dependencies": {
+    "canvaskit-wasm": "^0.17.3",
+    "image-size": "^0.9.1",
+    "qrcode": "^1.4.4",
+    "sharp": "^0.26.1"
+  }
+}
