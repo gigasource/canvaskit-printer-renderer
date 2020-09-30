@@ -6,6 +6,7 @@ const sharp = require('sharp');
 const QRCode = require('qrcode');
 const imageSizeOf = require('image-size');
 const {Writable} = require('stream');
+const PNG = require('pngjs');
 // const generateBarcode = require('barcode');
 
 const DEFAULT_FONT_SIZE = 14;
@@ -23,7 +24,12 @@ async function initCanvaskit() {
 }
 
 class CanvaskitApi {
-  constructor(width = 600, height = 15000) {
+  constructor(width = 600, height = 15000, opts = {}) {
+    // print functions from pos-restaurant, used for backward compatibility
+    const {printFunctions = {}} = opts;
+    this.externalPrintPng = printFunctions.printPng;
+    this.externalPrint = printFunctions.print;
+
     this.textAlign = Canvaskit.TextAlign.Left;
     this.fontWeight = Canvaskit.FontWeight.Normal;
     this.fontSize = DEFAULT_FONT_SIZE;
@@ -143,16 +149,30 @@ class CanvaskitApi {
     this.currentPrintY += paragraphHeight;
   }
 
-  async print(outputFilePath) {
+  async _getPrintPngBuffer() {
     const img = this.surface.makeImageSnapshot();
     const png = img.encodeToData();
 
-    let pngBytes = Canvaskit.getSkDataBytes(png);
-    pngBytes = await sharp(Buffer.from(pngBytes))
+    const pngBuffer = Canvaskit.getSkDataBytes(png);
+    return await sharp(Buffer.from(pngBuffer))
       .resize(this.canvasWidth, this.currentPrintY + this.paddingVertical, {position: 'top',})
       .toBuffer();
+  }
 
-    fs.writeFileSync(path.resolve(outputFilePath), pngBytes);
+  async printToFile(outputFilePath) {
+    const pngBuffer = await this._getPrintPngBuffer();
+
+    fs.writeFileSync(path.resolve(outputFilePath), pngBuffer);
+  }
+
+  async print() {
+    const pngBuffer = await this._getPrintPngBuffer();
+    const png = PNG.sync.read(pngBuffer);
+
+    if (typeof this.externalPrintPng === 'function' && typeof this.externalPrint === 'function') {
+      this.externalPrintPng(png);
+      await this.externalPrint();
+    }
   }
 
   printQrCode(text) {

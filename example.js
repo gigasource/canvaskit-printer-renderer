@@ -75,7 +75,7 @@ initCanvaskit().then(async (CanvaskitApi) => {
   canvaskitApi.bold(true);
   canvaskitApi.println('Vielen Dank fur Ihren Besuch!');
 
-  canvaskitApi.print(path.resolve(`${__dirname}/example.png`)).then(() => {
+  canvaskitApi.printToFile(path.resolve(`${__dirname}/example.png`)).then(() => {
     console.log('Printed');
     canvaskitApi.cleanup();
   });
