@@ -2,7 +2,7 @@ const canvaskitFilePath = 'canvaskit-wasm/bin/canvaskit.js';
 const CanvaskitInit = require(canvaskitFilePath);
 const path = require('path');
 const fs = require('fs');
-const sharp = require('sharp');
+// const sharp = require('sharp');
 const QRCode = require('qrcode');
 const imageSizeOf = require('image-size');
 const {Writable} = require('stream');
@@ -10,6 +10,7 @@ const {PNG} = require('pngjs');
 // const generateBarcode = require('barcode');
 
 const DEFAULT_FONT_SIZE = 24;
+const DEFAULT_NEW_LINE_FONT_SIZE = 6;
 const DEFAULT_FONT = 'Verdana';
 let Canvaskit;
 
@@ -36,6 +37,7 @@ class CanvaskitApi {
     this.fontName = DEFAULT_FONT;
     this.fontData = fs.readFileSync(DEFAULT_FONT_FILE_PATH);
     this.textColor = Canvaskit.BLACK;
+    this.newLineFontSize = DEFAULT_NEW_LINE_FONT_SIZE;
 
     this.canvasWidth = width;
     this.canvasHeight = height;
@@ -65,14 +67,17 @@ class CanvaskitApi {
 
   setTextDoubleHeight() {
     this.fontSize = DEFAULT_FONT_SIZE * 2;
+    this.newLineFontSize = DEFAULT_NEW_LINE_FONT_SIZE * 2;
   }
 
   setTextDoubleWidth() {
     this.fontSize = DEFAULT_FONT_SIZE * 2;
+    this.newLineFontSize = DEFAULT_NEW_LINE_FONT_SIZE * 2;
   }
 
   setTextQuadArea() {
     this.fontSize = DEFAULT_FONT_SIZE * 2;
+    this.newLineFontSize = DEFAULT_NEW_LINE_FONT_SIZE * 2;
   }
 
   bold(isBold) {
@@ -81,6 +86,7 @@ class CanvaskitApi {
 
   setTextNormal() {
     this.fontSize = DEFAULT_FONT_SIZE;
+    this.newLineFontSize = DEFAULT_NEW_LINE_FONT_SIZE;
     this.bold(false);
   }
 
@@ -94,7 +100,7 @@ class CanvaskitApi {
 
   newLine() {
     const currentFontSize = this.fontSize;
-    this.fontSize = DEFAULT_FONT_SIZE;
+    this.fontSize = this.newLineFontSize;
     this.println('\n');
     this.fontSize = currentFontSize;
   }
@@ -158,9 +164,10 @@ class CanvaskitApi {
     const png = img.encodeToData();
 
     const pngBuffer = Canvaskit.getSkDataBytes(png);
-    return sharp(Buffer.from(pngBuffer))
+    /*return sharp(Buffer.from(pngBuffer))
       .resize(this.canvasWidth, this.currentPrintY + this.paddingVertical, {position: 'top',})
-      .toBuffer();
+      .toBuffer();*/
+    return pngBuffer;
   }
 
   async printToFile(outputFilePath) {
