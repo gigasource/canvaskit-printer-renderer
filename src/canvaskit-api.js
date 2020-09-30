@@ -10,7 +10,7 @@ const {PNG} = require('pngjs');
 // const generateBarcode = require('barcode');
 
 const DEFAULT_FONT_SIZE = 24;
-const DEFAULT_NEW_LINE_FONT_SIZE = 6;
+const DEFAULT_NEW_LINE_FONT_SIZE = 4;
 const DEFAULT_FONT = 'Verdana';
 let Canvaskit;
 
@@ -34,6 +34,7 @@ class CanvaskitApi {
     this.textAlign = Canvaskit.TextAlign.Left;
     this.fontWeight = Canvaskit.FontWeight.Normal;
     this.fontSize = DEFAULT_FONT_SIZE;
+    this.fontWidth = Canvaskit.FontWidth.Normal;
     this.fontName = DEFAULT_FONT;
     this.fontData = fs.readFileSync(DEFAULT_FONT_FILE_PATH);
     this.textColor = Canvaskit.BLACK;
@@ -67,16 +68,19 @@ class CanvaskitApi {
 
   setTextDoubleHeight() {
     this.fontSize = DEFAULT_FONT_SIZE * 2;
+    this.fontWidth = Canvaskit.FontWidth.Condensed;
     this.newLineFontSize = DEFAULT_NEW_LINE_FONT_SIZE * 2;
   }
 
   setTextDoubleWidth() {
-    this.fontSize = DEFAULT_FONT_SIZE * 2;
-    this.newLineFontSize = DEFAULT_NEW_LINE_FONT_SIZE * 2;
+    this.fontSize = DEFAULT_FONT_SIZE;
+    this.fontWidth = Canvaskit.FontWidth.Expanded;
+    this.newLineFontSize = DEFAULT_NEW_LINE_FONT_SIZE;
   }
 
   setTextQuadArea() {
     this.fontSize = DEFAULT_FONT_SIZE * 2;
+    this.fontWidth = Canvaskit.FontWidth.Normal;
     this.newLineFontSize = DEFAULT_NEW_LINE_FONT_SIZE * 2;
   }
 
@@ -86,6 +90,7 @@ class CanvaskitApi {
 
   setTextNormal() {
     this.fontSize = DEFAULT_FONT_SIZE;
+    this.fontWidth = Canvaskit.FontWidth.Normal;
     this.newLineFontSize = DEFAULT_NEW_LINE_FONT_SIZE;
     this.bold(false);
   }
@@ -142,7 +147,7 @@ class CanvaskitApi {
       return paragraphHeight;
     });
 
-    const maxHeight = heights.sort().reverse()[0];
+    const maxHeight = heights.sort((e1, e2) => e2 - e1)[0];
     this.currentPrintY += maxHeight;
     this.currentPrintX = currentPrintX;
   }
@@ -167,7 +172,7 @@ class CanvaskitApi {
     /*return sharp(Buffer.from(pngBuffer))
       .resize(this.canvasWidth, this.currentPrintY + this.paddingVertical, {position: 'top',})
       .toBuffer();*/
-    return pngBuffer;
+    return Buffer.from(pngBuffer);
   }
 
   async printToFile(outputFilePath) {
@@ -286,6 +291,7 @@ class CanvaskitApi {
         fontSize: this.fontSize,
         fontStyle: {
           weight: this.fontWeight,
+          width: this.fontWidth,
         }
       },
       textAlign: this.textAlign,
