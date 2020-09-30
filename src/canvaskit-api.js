@@ -84,6 +84,10 @@ class CanvaskitApi {
     this.bold(false);
   }
 
+  invert() {
+    // will be implemented later
+  }
+
   setFontSize(fontSize) {
     this.fontSize = fontSize;
   }
