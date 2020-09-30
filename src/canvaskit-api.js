@@ -6,10 +6,10 @@ const sharp = require('sharp');
 const QRCode = require('qrcode');
 const imageSizeOf = require('image-size');
 const {Writable} = require('stream');
-const PNG = require('pngjs');
+const {PNG} = require('pngjs');
 // const generateBarcode = require('barcode');
 
-const DEFAULT_FONT_SIZE = 14;
+const DEFAULT_FONT_SIZE = 24;
 const DEFAULT_FONT = 'Verdana';
 let Canvaskit;
 
@@ -24,7 +24,7 @@ async function initCanvaskit() {
 }
 
 class CanvaskitApi {
-  constructor(width = 600, height = 15000, opts = {}) {
+  constructor(width = 560, height = 15000, opts = {}) {
     // print functions from pos-restaurant, used for backward compatibility
     const {printFunctions = {}} = opts;
     this.externalPrintPng = printFunctions.printPng;
@@ -39,8 +39,8 @@ class CanvaskitApi {
 
     this.canvasWidth = width;
     this.canvasHeight = height;
-    this.paddingHorizontal = 8;
-    this.paddingVertical = 10;
+    this.paddingHorizontal = 0;
+    this.paddingVertical = 0;
     this.printWidth = this.canvasWidth - this.paddingHorizontal * 2;
 
     this.currentPrintX = this.paddingHorizontal;
@@ -149,12 +149,12 @@ class CanvaskitApi {
     this.currentPrintY += paragraphHeight;
   }
 
-  async _getPrintPngBuffer() {
+  _getPrintPngBuffer() {
     const img = this.surface.makeImageSnapshot();
     const png = img.encodeToData();
 
     const pngBuffer = Canvaskit.getSkDataBytes(png);
-    return await sharp(Buffer.from(pngBuffer))
+    return sharp(Buffer.from(pngBuffer))
       .resize(this.canvasWidth, this.currentPrintY + this.paddingVertical, {position: 'top',})
       .toBuffer();
   }
@@ -176,6 +176,8 @@ class CanvaskitApi {
   }
 
   printQrCode(text) {
+    if (typeof text !== 'string') text = text.toString();
+
     return new Promise(resolve => {
       let qrBinData = Buffer.from([]);
 
@@ -262,6 +264,8 @@ class CanvaskitApi {
   }
 
   _drawParagraph(text, x, y, layoutWidth) {
+    if (typeof text !== 'string') text = text.toString();
+
     const fontMgr = Canvaskit.SkFontMgr.FromData([this.fontData]);
 
     const canvasParagraph = new Canvaskit.ParagraphStyle({
