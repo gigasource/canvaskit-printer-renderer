@@ -5,6 +5,8 @@ const fs = require('fs');
 const sharp = require('sharp');
 const QRCode = require('qrcode');
 const imageSizeOf = require('image-size');
+const {Writable} = require('stream');
+// const generateBarcode = require('barcode');
 
 const DEFAULT_FONT_SIZE = 14;
 const DEFAULT_FONT = 'Verdana';
@@ -21,7 +23,7 @@ async function initCanvaskit() {
 }
 
 class CanvaskitApi {
-  constructor(width = 600, height = 1500) {
+  constructor(width = 600, height = 15000) {
     this.textAlign = Canvaskit.TextAlign.Left;
     this.fontWeight = Canvaskit.FontWeight.Normal;
     this.fontSize = DEFAULT_FONT_SIZE;
@@ -56,6 +58,14 @@ class CanvaskitApi {
   }
 
   setTextDoubleHeight() {
+    this.fontSize = DEFAULT_FONT_SIZE * 2;
+  }
+
+  setTextDoubleWidth() {
+    this.fontSize = DEFAULT_FONT_SIZE * 2;
+  }
+
+  setTextQuadArea() {
     this.fontSize = DEFAULT_FONT_SIZE * 2;
   }
 
@@ -145,16 +155,50 @@ class CanvaskitApi {
     fs.writeFileSync(path.resolve(outputFilePath), pngBytes);
   }
 
-  async printQrCode(text) {
-    const tempFileName = `temp${Math.random()}.png`;
-    const tempFilePath = path.resolve(`${__dirname}/${tempFileName}`);
+  printQrCode(text) {
+    return new Promise(resolve => {
+      let qrBinData = Buffer.from([]);
 
-    await QRCode.toFile(tempFilePath, text);
-    const qrBinData = fs.readFileSync(tempFilePath);
-    fs.unlinkSync(tempFilePath);
+      const writeStream = new Writable();
+      writeStream._write = function (chunk, encoding, cb) {
+        qrBinData = Buffer.concat([qrBinData, chunk]);
+        cb();
+      }
+      writeStream.on('finish', () => {
+        this.printImage(qrBinData);
+        resolve();
+      });
 
-    this.printImage(qrBinData);
+      QRCode.toFileStream(writeStream, text);
+    })
+    // await QRCode.toFile(tempFilePath, text);
+    // const qrBinData = fs.readFileSync(tempFilePath);
+    // fs.unlinkSync(tempFilePath);
   }
+
+  /*printBarCode(text) {
+    return new Promise(resolve => {
+      const code128Barcode = generateBarcode('code39', {
+        data: text,
+        width: this.printWidth * 0.7,
+        height: 100,
+      });
+
+      let barcodeBinData = Buffer.from([]);
+
+      code128Barcode.getStream(function (err, barcodeReadStream) {
+
+        resolve();
+        /!*barcodeReadStream.on('data', (chunk) => {
+          barcodeBinData = Buffer.concat([barcodeBinData, chunk]);
+        });
+        barcodeReadStream.on('end', () => {
+          this.printImage(barcodeBinData);
+          resolve();
+        });*!/
+      });
+    });
+  }*/
 
   /**
    * @param imageInput can be a String (image file path) or Buffer(image binary data)
