@@ -2,7 +2,7 @@ const initCanvaskit = require('./src/canvaskit-api');
 const path = require('path');
 
 initCanvaskit().then(async (CanvaskitApi) => {
-  const canvaskitApi = new CanvaskitApi();
+  const canvaskitApi = new CanvaskitApi(560, 15000);
 
   canvaskitApi.alignCenter();
   canvaskitApi.printImage(path.resolve(`${__dirname}/logo.png`));

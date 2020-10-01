@@ -19,6 +19,7 @@
   "dependencies": {
     "canvaskit-wasm": "^0.17.3",
     "image-size": "^0.9.1",
+    "jimp": "^0.16.1",
     "pngjs": "^5.0.0",
     "qrcode": "^1.4.4"
   }

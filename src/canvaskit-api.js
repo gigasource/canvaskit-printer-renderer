@@ -2,7 +2,7 @@ const canvaskitFilePath = 'canvaskit-wasm/bin/canvaskit.js';
 const CanvaskitInit = require(canvaskitFilePath);
 const path = require('path');
 const fs = require('fs');
-// const sharp = require('sharp');
+const Jimp = require('jimp');
 const QRCode = require('qrcode');
 const imageSizeOf = require('image-size');
 const {Writable} = require('stream');
@@ -34,7 +34,6 @@ class CanvaskitApi {
     this.textAlign = Canvaskit.TextAlign.Left;
     this.fontWeight = Canvaskit.FontWeight.Normal;
     this.fontSize = DEFAULT_FONT_SIZE;
-    this.fontWidth = Canvaskit.FontWidth.Normal;
     this.fontName = DEFAULT_FONT;
     this.fontData = fs.readFileSync(DEFAULT_FONT_FILE_PATH);
     this.textColor = Canvaskit.BLACK;
@@ -68,19 +67,16 @@ class CanvaskitApi {
 
   setTextDoubleHeight() {
     this.fontSize = DEFAULT_FONT_SIZE * 2;
-    this.fontWidth = Canvaskit.FontWidth.Condensed;
     this.newLineFontSize = DEFAULT_NEW_LINE_FONT_SIZE * 2;
   }
 
   setTextDoubleWidth() {
     this.fontSize = DEFAULT_FONT_SIZE;
-    this.fontWidth = Canvaskit.FontWidth.Expanded;
     this.newLineFontSize = DEFAULT_NEW_LINE_FONT_SIZE;
   }
 
   setTextQuadArea() {
     this.fontSize = DEFAULT_FONT_SIZE * 2;
-    this.fontWidth = Canvaskit.FontWidth.Normal;
     this.newLineFontSize = DEFAULT_NEW_LINE_FONT_SIZE * 2;
   }
 
@@ -90,7 +86,6 @@ class CanvaskitApi {
 
   setTextNormal() {
     this.fontSize = DEFAULT_FONT_SIZE;
-    this.fontWidth = Canvaskit.FontWidth.Normal;
     this.newLineFontSize = DEFAULT_NEW_LINE_FONT_SIZE;
     this.bold(false);
   }
@@ -164,15 +159,16 @@ class CanvaskitApi {
     this.currentPrintY += paragraphHeight;
   }
 
-  _getPrintPngBuffer() {
+  async _getPrintPngBuffer() {
     const img = this.surface.makeImageSnapshot();
     const png = img.encodeToData();
 
-    const pngBuffer = Canvaskit.getSkDataBytes(png);
-    /*return sharp(Buffer.from(pngBuffer))
-      .resize(this.canvasWidth, this.currentPrintY + this.paddingVertical, {position: 'top',})
-      .toBuffer();*/
-    return Buffer.from(pngBuffer);
+    const pngBuffer = Buffer.from(Canvaskit.getSkDataBytes(png));
+
+    const jimpImg = await Jimp.read(pngBuffer);
+    jimpImg.crop(0, 0, this.canvasWidth, this.currentPrintY);
+
+    return await jimpImg.getBufferAsync(Jimp.MIME_PNG);
   }
 
   async printToFile(outputFilePath) {
@@ -291,7 +287,6 @@ class CanvaskitApi {
         fontSize: this.fontSize,
         fontStyle: {
           weight: this.fontWeight,
-          width: this.fontWidth,
         }
       },
       textAlign: this.textAlign,
