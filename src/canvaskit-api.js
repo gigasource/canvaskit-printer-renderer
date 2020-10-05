@@ -99,9 +99,9 @@ class CanvaskitApi {
     this.fontSize = fontSize;
   }
 
-  newLine() {
+  newLine(customNewLineFontSize) {
     const currentFontSize = this.fontSize;
-    this.fontSize = this.newLineFontSize;
+    this.fontSize = customNewLineFontSize || this.newLineFontSize;
     this.println('\n');
     this.fontSize = currentFontSize;
   }
