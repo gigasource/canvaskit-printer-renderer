@@ -208,7 +208,7 @@ class CanvaskitApi {
     });
   }
 
-  printBarCode(text, opts = {}) {
+  printBarcode(text, opts = {}) {
     const {height = 80, displayValue = false} = opts;
 
     const canvas = createCanvas();
