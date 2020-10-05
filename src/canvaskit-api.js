@@ -209,11 +209,12 @@ class CanvaskitApi {
   }
 
   printBarcode(text, opts = {}) {
-    const {height = 80, displayValue = false} = opts;
-
     const canvas = createCanvas();
     JsBarcode(canvas, text, {
-      height, displayValue
+      height: opts.height || 80,
+      width: opts.width || 3.5,
+      displayValue: opts.displayValue || false,
+      ...opts,
     });
 
     const barcodeImageBuffer = canvas.toBuffer('image/png');
