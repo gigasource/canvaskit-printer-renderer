@@ -68,6 +68,11 @@ initCanvaskit().then(async (CanvaskitApi) => {
 
   canvaskitApi.alignCenter();
   await canvaskitApi.printQrCode('2D49DCE478188FFB84B4F7B0735DF925436DCB23B64D2365FC0A62AB4DBE0217');
+  await canvaskitApi.printBarCode('2D49DCE478188FF', {
+    height: 60, // default is 80
+    displayValue: false, // display text value below the barcode or not, default is false
+  });
+  canvaskitApi.println('Value: 2D49DCE478188FF');
   canvaskitApi.newLine();
 
   canvaskitApi.setTextQuadArea();

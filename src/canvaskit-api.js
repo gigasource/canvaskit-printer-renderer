@@ -7,7 +7,8 @@ const QRCode = require('qrcode');
 const imageSizeOf = require('image-size');
 const {Writable} = require('stream');
 const {PNG} = require('pngjs');
-// const generateBarcode = require('barcode');
+const JsBarcode = require('jsbarcode');
+const {createCanvas} = require('canvas');
 
 const DEFAULT_FONT_SIZE = 24;
 const DEFAULT_NEW_LINE_FONT_SIZE = 4;
@@ -168,7 +169,7 @@ class CanvaskitApi {
     const jimpImg = await Jimp.read(pngBuffer);
     jimpImg.crop(0, 0, this.canvasWidth, this.currentPrintY);
 
-    return await jimpImg.getBufferAsync(Jimp.MIME_PNG);
+    return jimpImg.getBufferAsync(Jimp.MIME_PNG);
   }
 
   async printToFile(outputFilePath) {
@@ -204,35 +205,20 @@ class CanvaskitApi {
       });
 
       QRCode.toFileStream(writeStream, text);
-    })
-    // await QRCode.toFile(tempFilePath, text);
-    // const qrBinData = fs.readFileSync(tempFilePath);
-    // fs.unlinkSync(tempFilePath);
+    });
   }
 
-  /*printBarCode(text) {
-    return new Promise(resolve => {
-      const code128Barcode = generateBarcode('code39', {
-        data: text,
-        width: this.printWidth * 0.7,
-        height: 100,
-      });
+  printBarCode(text, opts = {}) {
+    const {height = 80, displayValue = false} = opts;
 
-      let barcodeBinData = Buffer.from([]);
-
-      code128Barcode.getStream(function (err, barcodeReadStream) {
-
-        resolve();
-        /!*barcodeReadStream.on('data', (chunk) => {
-          barcodeBinData = Buffer.concat([barcodeBinData, chunk]);
-        });
-        barcodeReadStream.on('end', () => {
-          this.printImage(barcodeBinData);
-          resolve();
-        });*!/
-      });
+    const canvas = createCanvas();
+    JsBarcode(canvas, text, {
+      height, displayValue
     });
-  }*/
+
+    const barcodeImageBuffer = canvas.toBuffer('image/png');
+    this.printImage(barcodeImageBuffer);
+  }
 
   /**
    * @param imageInput can be a String (image file path) or Buffer(image binary data)
