@@ -15,7 +15,12 @@ const DEFAULT_NEW_LINE_FONT_SIZE = 4;
 const DEFAULT_FONT = 'Verdana';
 let Canvaskit;
 
-const DEFAULT_FONT_FILE_PATH = path.resolve(__dirname + '/../assets/fonts/Verdana.ttf');
+const fonts = {
+  default: path.resolve(__dirname + '/../assets/fonts/Verdana.ttf'),
+  b: path.resolve(__dirname + '/../assets/fonts/Verdana_Bold.ttf'),
+  i: path.resolve(__dirname + '/../assets/fonts/Verdana_Italic.ttf'),
+  bi: path.resolve(__dirname + '/../assets/fonts/Verdana_Bold_Italic.ttf'),
+};
 
 async function initCanvaskit() {
   Canvaskit = await CanvaskitInit({
@@ -36,7 +41,12 @@ class CanvaskitApi {
     this.fontWeight = Canvaskit.FontWeight.Normal;
     this.fontSize = DEFAULT_FONT_SIZE;
     this.fontName = DEFAULT_FONT;
-    this.fontData = fs.readFileSync(DEFAULT_FONT_FILE_PATH);
+    this.fontData = [
+      fs.readFileSync(fonts.default),
+      fs.readFileSync(fonts.b),
+      fs.readFileSync(fonts.i),
+      fs.readFileSync(fonts.bi)
+    ];
     this.textColor = Canvaskit.BLACK;
     this.newLineFontSize = DEFAULT_NEW_LINE_FONT_SIZE;
 
@@ -265,7 +275,7 @@ class CanvaskitApi {
   _drawParagraph(text, x, y, layoutWidth) {
     if (typeof text !== 'string') text = text.toString();
 
-    const fontMgr = Canvaskit.SkFontMgr.FromData([this.fontData]);
+    const fontMgr = Canvaskit.SkFontMgr.FromData(this.fontData);
 
     const canvasParagraph = new Canvaskit.ParagraphStyle({
       textStyle: {
