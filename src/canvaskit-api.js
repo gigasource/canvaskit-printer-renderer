@@ -7,8 +7,8 @@ const QRCode = require('qrcode');
 const imageSizeOf = require('image-size');
 const {Writable} = require('stream');
 const {PNG} = require('pngjs');
-const JsBarcode = require('jsbarcode');
-const {createCanvas} = require('canvas');
+/*const JsBarcode = require('jsbarcode');
+const {createCanvas} = require('canvas');*/
 
 const DEFAULT_FONT_SIZE = 24;
 const DEFAULT_NEW_LINE_FONT_SIZE = 4;
@@ -219,7 +219,7 @@ class CanvaskitApi {
   }
 
   printBarcode(text, opts = {}) {
-    const canvas = createCanvas();
+/*    const canvas = createCanvas();
     JsBarcode(canvas, text, {
       height: opts.height || 80,
       width: opts.width || 3.5,
@@ -228,7 +228,7 @@ class CanvaskitApi {
     });
 
     const barcodeImageBuffer = canvas.toBuffer('image/png');
-    this.printImage(barcodeImageBuffer);
+    this.printImage(barcodeImageBuffer);*/
   }
 
   /**
