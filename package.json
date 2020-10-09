@@ -1,6 +1,6 @@
 {
   "name": "@gigasource/canvaskit-printer-renderer",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "description": "Use canvaskit-wasm to render bill images for printers to print",
   "main": "index.js",
   "scripts": {
@@ -17,7 +17,7 @@
   },
   "homepage": "https://github.com/gigasource/canvaskit-printer-renderer#readme",
   "dependencies": {
-    "canvaskit-wasm": "^0.17.3",
+    "canvaskit-wasm": "0.17.3",
     "image-size": "^0.9.1",
     "jimp": "^0.16.1",
     "pngjs": "^5.0.0",
