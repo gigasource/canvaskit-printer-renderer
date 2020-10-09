@@ -70,8 +70,6 @@ initCanvaskit().then(async (CanvaskitApi) => {
   await canvaskitApi.printQrCode('2D49DCE478188FFB84B4F7B0735DF925436DCB23B64D2365FC0A62AB4DBE0217');
   await canvaskitApi.printBarcode('201005103450367', {
     height: 80, // default is 80
-    width: 3.5, // width of each bar in barcode
-    displayValue: false, // display text value below the barcode or not, default is false
   });
   canvaskitApi.println('Value: 201005103450367');
   canvaskitApi.newLine();

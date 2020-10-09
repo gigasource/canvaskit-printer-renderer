@@ -7,8 +7,7 @@ const QRCode = require('qrcode');
 const imageSizeOf = require('image-size');
 const {Writable} = require('stream');
 const {PNG} = require('pngjs');
-/*const JsBarcode = require('jsbarcode');
-const {createCanvas} = require('canvas');*/
+const CanvaskitBarcode = require('@gigasource/barcode-canvaskit');
 
 const DEFAULT_FONT_SIZE = 24;
 const DEFAULT_NEW_LINE_FONT_SIZE = 4;
@@ -218,17 +217,16 @@ class CanvaskitApi {
     });
   }
 
-  printBarcode(text, opts = {}) {
-/*    const canvas = createCanvas();
-    JsBarcode(canvas, text, {
-      height: opts.height || 80,
-      width: opts.width || 3.5,
-      displayValue: opts.displayValue || false,
-      ...opts,
+  async printBarcode(text, opts = {}) {
+    const code128 = CanvaskitBarcode('code128', {
+      data: text,
+      width: Math.floor(this.printWidth),
+      height: Math.floor(opts.height || 80),
     });
 
-    const barcodeImageBuffer = canvas.toBuffer('image/png');
-    this.printImage(barcodeImageBuffer);*/
+    const pngBuffer = await code128.getPngBuffer();
+
+    this.printImage(pngBuffer);
   }
 
   /**
