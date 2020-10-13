@@ -1,86 +1,101 @@
-const initCanvaskit = require('./src/canvaskit-api');
+const PureImagePrinter = require('./src/pure-image-api');
+const pureImagePrinter = new PureImagePrinter(560);
+
 const path = require('path');
 
-initCanvaskit().then(async (CanvaskitApi) => {
-  const canvaskitApi = new CanvaskitApi(560, 15000);
+(async () => {
+  pureImagePrinter.alignCenter();
+  await pureImagePrinter.printImage(path.resolve(`${__dirname}/logo.png`));
+  pureImagePrinter.newLine();
+  pureImagePrinter.setFontSize(14);
+  pureImagePrinter.println('ANOKI RESTAURANT');
+  pureImagePrinter.println('Maximilanstrabe 2 / Hofgraben 9');
+  pureImagePrinter.println('80859 Munchen');
+  pureImagePrinter.println('Tel: 089 413 275 60');
+  pureImagePrinter.println('St.-Nr: 143/147/31337');
+  pureImagePrinter.newLine();
 
-  canvaskitApi.alignCenter();
-  canvaskitApi.printImage(path.resolve(`${__dirname}/logo.png`));
-  canvaskitApi.newLine();
-  canvaskitApi.setFontSize(14);
-  canvaskitApi.println('ANOKI RESTAURANT');
-  canvaskitApi.println('Maximilanstrabe 2 / Hofgraben 9');
-  canvaskitApi.println('80859 Munchen');
-  canvaskitApi.println('Tel: 089 413 275 60');
-  canvaskitApi.println('St.-Nr: 143/147/31337');
-  canvaskitApi.newLine();
+  pureImagePrinter.alignLeft();
+  pureImagePrinter.setTextQuadArea();
+  pureImagePrinter.bold(true);
+  pureImagePrinter.println('Rechnung');
+  pureImagePrinter.println('Datum: 21.09.2020 13:45');
+  pureImagePrinter.println('Tisch: 63');
+  pureImagePrinter.bold(false);
+  pureImagePrinter.drawLine();
 
-  canvaskitApi.alignLeft();
-  canvaskitApi.setTextQuadArea();
-  canvaskitApi.bold(true);
-  canvaskitApi.println('Rechnung');
-  canvaskitApi.println('Datum: 21.09.2020 13:45');
-  canvaskitApi.println('Tisch: 63');
-  canvaskitApi.bold(false);
-  canvaskitApi.drawLine();
-
-  canvaskitApi.setFontSize(14);
-  canvaskitApi.tableCustom([
+  pureImagePrinter.setFontSize(14);
+  pureImagePrinter.tableCustom([
     {text: 'Qty', align: 'LEFT', width: 0.1},
     {text: 'Bezeichnung', align: 'LEFT', width: 0.5},
     {text: 'EP', align: 'LEFT', width: 0.1},
     {text: 'Preis', align: 'RIGHT', width: 0.3},
   ]);
-  canvaskitApi.tableCustom([
+  pureImagePrinter.tableCustom([
     {text: '1', align: 'LEFT', width: 0.1},
     {text: 'Whiskey Sour', align: 'LEFT', width: 0.5},
     {text: '', align: 'LEFT', width: 0.1},
     {text: '12,80', align: 'RIGHT', width: 0.3},
   ]);
-  canvaskitApi.tableCustom([
+  pureImagePrinter.tableCustom([
     {text: '1', align: 'LEFT', width: 0.1},
     {text: 'Pisco Sour', align: 'LEFT', width: 0.5},
     {text: '', align: 'LEFT', width: 0.1},
     {text: '12,80', align: 'RIGHT', width: 0.3},
   ]);
-  canvaskitApi.drawLine();
+  pureImagePrinter.drawLine();
 
-  canvaskitApi.setTextQuadArea();
-  canvaskitApi.bold(true);
-  canvaskitApi.leftRight('Summe', '$ 25.60');
-  canvaskitApi.drawLine();
+  pureImagePrinter.setTextQuadArea();
+  pureImagePrinter.bold(true);
+  pureImagePrinter.leftRight('Summe', '$ 25.60');
+  pureImagePrinter.drawLine();
 
-  canvaskitApi.setFontSize(14);
-  canvaskitApi.bold(false);
-  canvaskitApi.leftRight('Netto', '22,07');
-  canvaskitApi.leftRight('16% MwSt:', '3,53');
-  canvaskitApi.newLine();
+  pureImagePrinter.setFontSize(14);
+  pureImagePrinter.bold(false);
+  pureImagePrinter.leftRight('Netto', '22,07');
+  pureImagePrinter.leftRight('16% MwSt:', '3,53');
+  pureImagePrinter.newLine();
 
-  canvaskitApi.tableCustom([
+  pureImagePrinter.tableCustom([
     {text: 'TSE-Serienummer:', align: 'LEFT', width: 0.5},
     {text: '2D49DCE478188FFB84B4F7B0735DF925436DCB23B64D2365FC0A62AB4DBE0217', align: 'LEFT', width: 0.5},
   ]);
-  canvaskitApi.tableCustom([
+  pureImagePrinter.tableCustom([
     {text: 'TSE-Signature:', align: 'LEFT', width: 0.5},
     {text: '2D49DCE478188FFB84B4F7B0735DF925436DCB23B64D2365FC0A62AB4DBE0217', align: 'LEFT', width: 0.5},
   ]);
-  canvaskitApi.newLine();
+  pureImagePrinter.newLine();
 
-  canvaskitApi.alignCenter();
-  await canvaskitApi.printQrCode('2D49DCE478188FFB84B4F7B0735DF925436DCB23B64D2365FC0A62AB4DBE0217');
-  await canvaskitApi.printBarcode('201005103450367', {
+  pureImagePrinter.alignCenter();
+  await pureImagePrinter.printQrCode('2D49DCE478188FFB84B4F7B0735DF925436DCB23B64D2365FC0A62AB4DBE0217');
+  await pureImagePrinter.printBarcode('201005103450367', {
     height: 80, // default is 80
+    width: 3.5, // width of each bar in barcode
+    displayValue: false, // display text value below the barcode or not, default is false
   });
-  canvaskitApi.println('Value: 201005103450367');
-  canvaskitApi.newLine();
+  pureImagePrinter.println('Value: 201005103450367');
+  pureImagePrinter.newLine();
 
-  canvaskitApi.setTextQuadArea();
-  canvaskitApi.alignLeft();
-  canvaskitApi.bold(true);
-  canvaskitApi.println('Vielen Dank fur Ihren Besuch!');
+  pureImagePrinter.setTextQuadArea();
+  pureImagePrinter.alignLeft();
+  pureImagePrinter.bold(true);
+  pureImagePrinter.println('Vielen Dank fur Ihren Besuch!');
 
-  canvaskitApi.printToFile(path.resolve(`${__dirname}/example.png`)).then(() => {
+  pureImagePrinter.printToFile(path.resolve(`${__dirname}/example.png`)).then(() => {
     console.log('Printed');
-    canvaskitApi.cleanup();
+    pureImagePrinter.cleanup();
+    showMemUsage();
   });
-});
+
+  setInterval(() => {
+    showMemUsage();
+  }, 5000)
+})()
+
+function showMemUsage() {
+  const memUsage = process.memoryUsage();
+  console.log(Object.keys(memUsage).reduce((acc, cur) => {
+    acc[cur] = memUsage[cur] / (1024 * 1024);
+    return acc;
+  }, {}));
+}

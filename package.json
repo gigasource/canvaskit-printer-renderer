@@ -1,7 +1,7 @@
 {
-  "name": "@gigasource/canvaskit-printer-renderer",
-  "version": "0.0.13",
-  "description": "Use canvaskit-wasm to render bill images for printers to print",
+  "name": "@gigasource/pureimage-printer-renderer",
+  "version": "0.0.1",
+  "description": "Use pureimage to render bill & report images for printers to print",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -17,11 +17,11 @@
   },
   "homepage": "https://github.com/gigasource/canvaskit-printer-renderer#readme",
   "dependencies": {
-    "@gigasource/barcode-canvaskit": "^1.0.1",
-    "canvaskit-wasm": "0.17.3",
-    "image-size": "^0.9.1",
+    "canvas-txt": "^2.0.10",
     "jimp": "^0.16.1",
+    "jsbarcode": "^3.11.3",
     "pngjs": "^5.0.0",
+    "pureimage": "^0.2.5",
     "qrcode": "^1.4.4"
   }
 }
