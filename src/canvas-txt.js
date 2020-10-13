@@ -44,7 +44,7 @@ const canvasTxt = {
 
     const { fontStyle, fontVariant, fontWeight, fontSize, font } = this
     const style = `${fontStyle} ${fontVariant} ${fontWeight} ${fontSize}px ${font}`
-    ctx.font = style
+    ctx.font = style.trim();
 
     let txtY = y + height / 2 + parseInt(this.fontSize) / 2
 
@@ -172,13 +172,13 @@ const canvasTxt = {
     const previousFont = ctx._font
 
     ctx.textBaseline = 'bottom'
-    ctx.font = style
+    ctx.font = style.trim();
     const metrics = ctx.measureText(text)
 
     const height = metrics.emHeightAscent - metrics.emHeightDescent;
     // Reset baseline
     ctx.textBaseline = previousTextBaseline
-    ctx.font = `  ${previousFont.size}px ${previousFont.family}`
+    ctx.font = `${previousFont.size}px ${previousFont.family}`
 
     return height
   },
