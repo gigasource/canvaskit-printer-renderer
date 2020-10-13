@@ -1,4 +1,4 @@
-const PureImagePrinter = require('./src/pure-image-api');
+const PureImagePrinter = require('./src/pureimage-api');
 const pureImagePrinter = new PureImagePrinter(560);
 
 const path = require('path');

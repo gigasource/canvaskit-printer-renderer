@@ -1,1 +1,1 @@
-module.exports = require('./src/canvaskit-api');
+module.exports = require('./src/pureimage-api.js');
