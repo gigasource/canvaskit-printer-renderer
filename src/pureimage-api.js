@@ -366,7 +366,6 @@ class PureImagePrinter {
 
   cleanup() {
     this.canvasContext = null;
-    this.canvas.data = null;
     this.canvas = null;
   }
 }
