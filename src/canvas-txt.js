@@ -31,7 +31,7 @@ const canvasTxt = {
     }
 
     // End points
-    const xEnd = x + width
+    let xEnd = x + width
     const yEnd = y + height
 
     if (this.textSize) {
@@ -59,6 +59,15 @@ const canvasTxt = {
     } else {
       textanchor = x + width / 2
       ctx.textAlign = 'center'
+    }
+
+    const firstCharacterWidth = ctx.measureText(mytext.substr(0, 1)).width;
+    if (firstCharacterWidth >= width) {
+      width = Math.floor(firstCharacterWidth) + 1;
+      xEnd = x + width;
+
+      if (this.align === 'right') textanchor = xEnd;
+      else if (this.align !== 'right' && this.align !== 'left') textanchor = Math.floor(x + width / 2);
     }
 
     //added one-line only auto linebreak feature
@@ -164,7 +173,7 @@ const canvasTxt = {
 
     const TEXT_HEIGHT = vheight + charHeight
 
-    return { height: TEXT_HEIGHT }
+    return { height: TEXT_HEIGHT, width }
   },
   // Calculate Height of the font
   getTextHeight: function(ctx, text, style) {

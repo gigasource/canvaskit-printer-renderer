@@ -84,7 +84,7 @@ class PureImagePrinter {
   }
 
   setTextDoubleHeight() {
-    this.fontSize = Math.round(DEFAULT_FONT_SIZE * 1.1);
+    this.fontSize = Math.round(DEFAULT_FONT_SIZE * 2);
     this.newLineFontSize = DEFAULT_NEW_LINE_FONT_SIZE * 2;
   }
 
@@ -94,7 +94,7 @@ class PureImagePrinter {
   }
 
   setTextQuadArea() {
-    this.fontSize = Math.round(DEFAULT_FONT_SIZE * 1.1);
+    this.fontSize = Math.round(DEFAULT_FONT_SIZE * 2);
     this.newLineFontSize = DEFAULT_NEW_LINE_FONT_SIZE * 2;
   }
 
@@ -140,21 +140,36 @@ class PureImagePrinter {
   tableCustom(columns) {
     const currentPrintX = this.currentPrintX;
 
-    const heights = columns.map(column => {
+    // for fixing a bug of canvas-txt relating to paragraph width < single character width, causing infinite while loop
+    // this variable is for ensuring total paragraph width doesn't become larger than canvas width
+    let totalParagraphWidthExtension = 0;
+
+    const heights = columns.map((column, index) => {
+      // NOTE: use for loop if this uses async function, this requires functions being executed sequentially
       let {text, align, width} = column;
 
       if (width < 0) width = 0;
       else if (width > 1) width = 1.0;
 
-      const paragraphLayoutWidth = this.printWidth * width;
+      let paragraphLayoutWidth = this.printWidth * width;
       const currentTextAlign = this.textAlign;
+
+      if (index === columns.length - 1 && totalParagraphWidthExtension > 0) {
+        paragraphLayoutWidth -= Math.round(totalParagraphWidthExtension);
+        totalParagraphWidthExtension = 0;
+      }
 
       if (align.toUpperCase() === 'LEFT') this.textAlign = 'left';
       else if (align.toUpperCase() === 'RIGHT') this.textAlign = 'right';
       else if (align.toUpperCase() === 'CENTER') this.textAlign = 'center';
 
-      const paragraphHeight = this._drawParagraph(text, this.currentPrintX, this.currentPrintY, paragraphLayoutWidth);
-      this.currentPrintX += paragraphLayoutWidth;
+      const {height: paragraphHeight, width: paragraphWidth} =
+        this._drawParagraph(text, this.currentPrintX, this.currentPrintY, paragraphLayoutWidth);
+
+      const paragraphWidthExtension = paragraphWidth - paragraphLayoutWidth;
+      if (paragraphWidthExtension > 0) totalParagraphWidthExtension += paragraphWidthExtension;
+
+      this.currentPrintX += paragraphWidth;
 
       this.textAlign = currentTextAlign;
       return paragraphHeight;
@@ -174,7 +189,7 @@ class PureImagePrinter {
   }
 
   println(text) {
-    const paragraphHeight = this._drawParagraph(text, this.currentPrintX, this.currentPrintY, this.printWidth);
+    const {height: paragraphHeight} = this._drawParagraph(text, this.currentPrintX, this.currentPrintY, this.printWidth);
     // this.currentPrintY += paragraphHeight;
     this._increasePrintY(paragraphHeight);
   }
@@ -321,13 +336,14 @@ class PureImagePrinter {
     CanvasTxt.align = this.textAlign;
     CanvasTxt.fontSize = this.fontSize;
     this.canvasContext.fillStyle = "black";
-    const {height} = CanvasTxt.drawText(this.canvasContext, text, x, y, layoutWidth, this.fontSize);
+    const {height, width} = CanvasTxt.drawText(this.canvasContext, text, x, y, layoutWidth, this.fontSize);
 
-    return height;
+    return {height, width};
   }
 
   _increasePrintY(value) {
     this.currentPrintY += value;
+    this.currentPrintY = Math.round(this.currentPrintY);
 
     if (this.currentPrintY + CANVAS_HEIGHT_RESIZING_REMAINING >= this.canvas.height) {
       this.canvas.height += CANVAS_HEIGHT_EXTENSION;

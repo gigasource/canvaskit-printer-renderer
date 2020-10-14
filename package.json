@@ -1,6 +1,6 @@
 {
   "name": "@gigasource/pureimage-printer-renderer",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Use pureimage to render bill & report images for printers to print",
   "main": "index.js",
   "scripts": {
