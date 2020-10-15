@@ -420,6 +420,7 @@ class PureImagePrinter {
     this._shrinkCanvasHeight();
     this._fillCanvasWithWhite();
 
+    delete taskListMapping[this.instanceId];
     this.canvasContext = null;
     this.canvas = null;
     executingInstanceId = null;
@@ -438,6 +439,7 @@ function applyQueueFunctionProxy(obj, keys) {
         return new Promise(((resolve, reject) => {
           function terminateInstanceExecution() {
             executingInstanceId = null;
+            delete taskListMapping[instanceId];
             obj._fillCanvasWithWhite();
             obj._shrinkCanvasHeight();
             instanceExecutionTimeout = null;
