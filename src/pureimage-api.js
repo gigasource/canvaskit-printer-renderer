@@ -8,6 +8,20 @@ const {Readable, Writable} = require('stream');
 const {PNG} = require('pngjs');
 const QRCode = require('qrcode');
 const JsBarcode = require('jsbarcode');
+const queue = require('queue');
+const {v4: uuidv4} = require('uuid');
+
+const taskExecutionQueue = queue({
+  concurrency: 1,
+  autostart: true,
+});
+
+const taskListMapping = {
+  // map an instance id to a list of tasks
+}
+
+let executingInstanceId = null;
+const INSTANCE_EXECUTION_TIMEOUT = 1000 * 60 * 3; // 3 minutes
 
 const DEFAULT_CANVAS_WIDTH = 560;
 const DEFAULT_CANVAS_HEIGHT = 2000;
@@ -22,6 +36,7 @@ const CANVAS_HEIGHT_RESIZING_REMAINING = 500;
 
 let canvas = PureImage.make(DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT, {});
 let canvasContext = canvas.getContext('2d');
+let firstInstanceCreated = false;
 
 class PureImagePrinter {
   constructor(width = DEFAULT_CANVAS_WIDTH, ...args) {
@@ -67,8 +82,12 @@ class PureImagePrinter {
     this.canvas = canvas;
     this.canvasContext = canvasContext;
 
-    this.canvasContext.fillStyle = 'white';
-    this.canvasContext.fillRect(0, 0, canvas.width, canvas.height);
+    if (!firstInstanceCreated) {
+      firstInstanceCreated = true;
+      this._fillCanvasWithWhite();
+    }
+
+    this.instanceId = uuidv4();
   }
 
   alignLeft() {
@@ -124,12 +143,10 @@ class PureImagePrinter {
   newLine(customNewLineFontSize) {
     const currentFontSize = this.fontSize;
     this.fontSize = customNewLineFontSize || this.newLineFontSize;
-    this.println('\n');
-    this.fontSize = currentFontSize;
+    this.println('\n').then(() => this.fontSize = currentFontSize);
   }
 
   drawLine() {
-    // this.currentPrintY += DEFAULT_FONT_SIZE;
     this._increasePrintY(DEFAULT_FONT_SIZE);
     const y = this.currentPrintY - DEFAULT_FONT_SIZE / 2;
 
@@ -144,8 +161,11 @@ class PureImagePrinter {
     // this variable is for ensuring total paragraph width doesn't become larger than canvas width
     let totalParagraphWidthExtension = 0;
 
-    const heights = columns.map((column, index) => {
-      // NOTE: use for loop if this uses async function, this requires functions being executed sequentially
+    const heights = [];
+
+    for (let i = 0; i < columns.length; i++) {
+      const column = columns[i];
+
       let {text, align, width} = column;
 
       if (width < 0) width = 0;
@@ -154,7 +174,7 @@ class PureImagePrinter {
       let paragraphLayoutWidth = this.printWidth * width;
       const currentTextAlign = this.textAlign;
 
-      if (index === columns.length - 1 && totalParagraphWidthExtension > 0) {
+      if (i === columns.length - 1 && totalParagraphWidthExtension > 0) {
         paragraphLayoutWidth -= Math.round(totalParagraphWidthExtension);
         totalParagraphWidthExtension = 0;
       }
@@ -172,11 +192,10 @@ class PureImagePrinter {
       this.currentPrintX += paragraphWidth;
 
       this.textAlign = currentTextAlign;
-      return paragraphHeight;
-    });
+      heights.push(paragraphHeight);
+    }
 
     const maxHeight = heights.sort((e1, e2) => e2 - e1)[0];
-    // this.currentPrintY += maxHeight;
     this._increasePrintY(maxHeight);
     this.currentPrintX = currentPrintX;
   }
@@ -190,11 +209,10 @@ class PureImagePrinter {
 
   println(text) {
     const {height: paragraphHeight} = this._drawParagraph(text, this.currentPrintX, this.currentPrintY, this.printWidth);
-    // this.currentPrintY += paragraphHeight;
     this._increasePrintY(paragraphHeight);
   }
 
-  async _canvasToPngBuffer(canvas) {
+  _canvasToPngBuffer(canvas) {
     return new Promise(async resolve => {
       let canvasImageBuffer = Buffer.from([]);
 
@@ -229,7 +247,7 @@ class PureImagePrinter {
     const png = PNG.sync.read(pngBuffer);
 
     if (typeof this.externalPrintPng === 'function' && typeof this.externalPrint === 'function') {
-      this.externalPrintPng(png);
+      await this.externalPrintPng(png);
       await this.externalPrint();
     }
   }
@@ -246,7 +264,11 @@ class PureImagePrinter {
         cb();
       }
       writeStream.on('finish', () => {
-        this.printImage(qrBinData).then(resolve);
+        // this.printImage(qrBinData).then(resolve);
+
+        // because we use queue to execute functions, .then is no longer needed
+        this.printImage(qrBinData);
+        resolve();
       });
 
       QRCode.toFileStream(writeStream, text);
@@ -256,8 +278,8 @@ class PureImagePrinter {
   async printBarcode(text, opts = {}) {
     const {height = 80, width = 3.5, displayValue = false} = opts;
 
-    const canvas = PureImage.make(this.printWidth, height + 10, {});
-    const canvasContext = canvas.getContext('2d');
+    let canvas = PureImage.make(this.printWidth, height + 10, {});
+    let canvasContext = canvas.getContext('2d');
 
     canvasContext.fillStyle = 'white';
     canvasContext.fillRect(0, 0, this.printWidth, height);
@@ -272,7 +294,11 @@ class PureImagePrinter {
     });
 
     const barcodeImageBuffer = await this._canvasToPngBuffer(canvas);
-    await this.printImage(barcodeImageBuffer);
+    this.printImage(barcodeImageBuffer).then(() => {
+      canvasContext = null;
+      canvas.data = null;
+      canvas = null;
+    });
   }
 
   async printImage(imageInput) {
@@ -310,7 +336,6 @@ class PureImagePrinter {
       imageX, this.currentPrintY, imgWidth, imgHeight // destination dimensions
     );
 
-    // this.currentPrintY += imgHeight;
     this._increasePrintY(imgHeight);
   }
 
@@ -380,10 +405,102 @@ class PureImagePrinter {
     }
   }
 
+  _fillCanvasWithWhite() {
+    this.canvasContext.fillStyle = 'white';
+    this.canvasContext.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  _shrinkCanvasHeight() {
+    this.canvas.height = DEFAULT_CANVAS_HEIGHT;
+    const newBufferSize = Math.floor(this.canvasWidth) * this.canvas.height * 4;
+    this.canvas.data = this.canvas.data.slice(0, newBufferSize);
+  }
+
   cleanup() {
+    this._shrinkCanvasHeight();
+    this._fillCanvasWithWhite();
+
     this.canvasContext = null;
     this.canvas = null;
+    executingInstanceId = null;
   }
 }
 
-module.exports = PureImagePrinter;
+function applyQueueFunctionProxy(obj, keys) {
+  const instanceId = obj.instanceId;
+  let instanceExecutionTimeout;
+
+  keys.forEach(key => {
+    if (key.startsWith('_') || typeof obj[key] !== 'function' || key === 'constructor') return;
+
+    obj[key] = new Proxy(obj[key], {
+      apply(target, thisArg, argArray) {
+        return new Promise(((resolve, reject) => {
+          function terminateInstanceExecution() {
+            executingInstanceId = null;
+            obj._fillCanvasWithWhite();
+            obj._shrinkCanvasHeight();
+            instanceExecutionTimeout = null;
+          }
+
+          function clearExecutionTimeout() {
+            if (instanceExecutionTimeout) {
+              clearTimeout(instanceExecutionTimeout);
+              instanceExecutionTimeout = null;
+            }
+          }
+
+          if (!instanceExecutionTimeout) instanceExecutionTimeout = setTimeout(terminateInstanceExecution, INSTANCE_EXECUTION_TIMEOUT);
+
+          if (!executingInstanceId && key !== 'cleanup') executingInstanceId = instanceId;
+
+          taskListMapping[instanceId] = taskListMapping[instanceId] || [];
+          taskListMapping[instanceId].push(async () => {
+            try {
+              const res = await target.apply(thisArg, argArray);
+
+              if (key === 'cleanup') clearExecutionTimeout();
+
+              resolve(res);
+            } catch (e) {
+              clearExecutionTimeout()
+              terminateInstanceExecution();
+              reject(e);
+            }
+          });
+
+          const executionFunction = async ({instanceId, key}, cb) => {
+            // if an instance has finished executing, let another instance starts
+            if (!executingInstanceId && key !== 'cleanup') executingInstanceId = instanceId;
+
+            // if current task does not belong to executing instance, push it to the end of the queue
+            if (executingInstanceId !== instanceId) {
+              taskExecutionQueue.push(executionFunction.bind(null, {instanceId, key}));
+              cb();
+              return;
+            }
+
+            const taskListToExecute = taskListMapping && taskListMapping[instanceId];
+
+            if (taskListToExecute && taskListToExecute.length > 0) {
+              const functionToExecute = taskListToExecute.shift();
+              await functionToExecute();
+            }
+
+            cb();
+          };
+
+          taskExecutionQueue.push(executionFunction.bind(null, {instanceId, key}));
+        }));
+      }
+    });
+  });
+}
+
+module.exports = new Proxy(PureImagePrinter, {
+  construct(target, argArray) {
+    const newObj = new target(...argArray);
+    applyQueueFunctionProxy(newObj, Reflect.ownKeys(newObj.__proto__));
+    return newObj;
+  }
+});
