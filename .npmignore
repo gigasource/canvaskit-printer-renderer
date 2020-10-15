@@ -121,3 +121,4 @@ dist
 example.png
 package-lock.json
 .gitignore
+example*.png
