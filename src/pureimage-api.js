@@ -250,6 +250,17 @@ class PureImagePrinter {
       await this.externalPrintPng(png);
       await this.externalPrint();
     }
+
+    await this._reset();
+  }
+
+  async _reset() {
+    await this.setTextNormal();
+    await this.alignLeft();
+    this.currentPrintX = 0;
+    this.currentPrintY = 0;
+    this._shrinkCanvasHeight();
+    this._fillCanvasWithWhite();
   }
 
   printQrCode(text) {
