@@ -497,8 +497,9 @@ function applyQueueFunctionProxy(obj, keys) {
             // if current task does not belong to executing instance, push it to the end of the queue
             if (executingInstanceId !== instanceId) {
               function fn() {
-                // exclude the case when function is cleanup and executingInstanceId === null
-                if (!(executingInstanceId === null && key === 'cleanup')) {
+                if (executingInstanceId === null && key === 'cleanup') {
+                  resolve();
+                } else { // exclude the case when function is cleanup and executingInstanceId === null
                   taskExecutionQueue.push(executionFunction.bind(null, {instanceId, key, delay: 1000}));
                 }
 
