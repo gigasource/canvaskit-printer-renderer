@@ -47,8 +47,8 @@ class PureImagePrinter {
     else if (typeof args[1] === 'object') opts = args[1]; // backward compatibility;
 
     const {printFunctions = {}} = opts;
-    this.externalPrintPng = printFunctions.printPng;
-    this.externalPrint = printFunctions.print;
+    this._externalPrintPng = printFunctions.printPng;
+    this._externalPrint = printFunctions.print;
     CanvasTxt.vAlign = 'top';
 
     this.canvasWidth = width;
@@ -246,19 +246,25 @@ class PureImagePrinter {
     const pngBuffer = await this._getPrintPngBuffer();
     const png = PNG.sync.read(pngBuffer);
 
-    if (typeof this.externalPrintPng === 'function' && typeof this.externalPrint === 'function') {
-      await this.externalPrintPng(png);
-      await this.externalPrint();
+    if (typeof this._externalPrintPng === 'function' && typeof this._externalPrint === 'function') {
+      await this._externalPrintPng(png);
+      await this._externalPrint();
     }
 
-    await this._reset();
+    this._reset();
   }
 
-  async _reset() {
-    await this.setTextNormal();
-    await this.alignLeft();
-    this.currentPrintX = 0;
-    this.currentPrintY = 0;
+  _reset() {
+    // set text normal
+    this.fontSize = DEFAULT_FONT_SIZE;
+    this.newLineFontSize = DEFAULT_NEW_LINE_FONT_SIZE;
+    this.bold(false);
+    this.italic(false);
+
+    // align left (default)
+    this.textAlign = 'left';
+
+    // shrink canvas & fill with white
     this._shrinkCanvasHeight();
     this._fillCanvasWithWhite();
   }
@@ -425,6 +431,8 @@ class PureImagePrinter {
     this.canvas.height = DEFAULT_CANVAS_HEIGHT;
     const newBufferSize = Math.floor(this.canvasWidth) * this.canvas.height * 4;
     this.canvas.data = this.canvas.data.slice(0, newBufferSize);
+    this.currentPrintX = 0;
+    this.currentPrintY = 0;
   }
 
   cleanup() {
@@ -482,14 +490,27 @@ function applyQueueFunctionProxy(obj, keys) {
             }
           });
 
-          const executionFunction = async ({instanceId, key}, cb) => {
+          const executionFunction = async ({instanceId, key, delay}, cb) => {
             // if an instance has finished executing, let another instance starts
             if (!executingInstanceId && key !== 'cleanup') executingInstanceId = instanceId;
 
             // if current task does not belong to executing instance, push it to the end of the queue
             if (executingInstanceId !== instanceId) {
-              taskExecutionQueue.push(executionFunction.bind(null, {instanceId, key}));
-              cb();
+              function fn() {
+                // exclude the case when function is cleanup and executingInstanceId === null
+                if (!(executingInstanceId === null && key === 'cleanup')) {
+                  taskExecutionQueue.push(executionFunction.bind(null, {instanceId, key, delay: 1000}));
+                }
+
+                cb();
+              }
+
+              if (!isNaN(delay) && delay > 0) {
+                setTimeout(fn, delay);
+              } else {
+                fn();
+              }
+
               return;
             }
 
