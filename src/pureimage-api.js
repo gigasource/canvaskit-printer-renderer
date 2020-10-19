@@ -140,10 +140,11 @@ class PureImagePrinter {
     this.fontSize = fontSize;
   }
 
-  newLine(customNewLineFontSize) {
+  async newLine(customNewLineFontSize) {
     const currentFontSize = this.fontSize;
     this.fontSize = customNewLineFontSize || this.newLineFontSize;
-    this.println('\n').then(() => this.fontSize = currentFontSize);
+    await this.println('\n');
+    this.fontSize = currentFontSize;
   }
 
   drawLine() {
