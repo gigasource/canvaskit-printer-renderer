@@ -143,7 +143,10 @@ class PureImagePrinter {
   newLine(customNewLineFontSize) {
     const currentFontSize = this.fontSize;
     this.fontSize = customNewLineFontSize || this.newLineFontSize;
-    this.println('\n').then(() => this.fontSize = currentFontSize);
+
+    const {height: paragraphHeight} = this._drawParagraph('\n', this.currentPrintX, this.currentPrintY, this.printWidth);
+    this._increasePrintY(paragraphHeight);
+    this.fontSize = currentFontSize
   }
 
   drawLine() {
