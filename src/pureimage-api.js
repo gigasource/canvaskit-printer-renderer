@@ -430,8 +430,11 @@ class PureImagePrinter {
   }
 
   _fillCanvasWithWhite() {
-    this.canvasContext.fillStyle = 'white';
-    this.canvasContext.fillRect(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < this.canvas.width; i++) {
+      for (let j = 0; j < this.canvas.height; j++) {
+        this.canvas.setPixelRGBA(i, j, 0xffffffff);
+      }
+    }
   }
 
   _shrinkCanvasHeight() {
