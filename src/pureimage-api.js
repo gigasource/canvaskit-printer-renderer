@@ -3,7 +3,6 @@ const uint32 = require('pureimage/src/uint32');
 const path = require('path');
 const fs = require('fs');
 const CanvasTxt = require('./canvas-txt');
-const Jimp = require('jimp');
 const {Readable, Writable} = require('stream');
 const {PNG} = require('pngjs');
 const QRCode = require('qrcode');
@@ -215,9 +214,11 @@ class PureImagePrinter {
     this._increasePrintY(paragraphHeight);
   }
 
-  _canvasToPngBuffer(canvas) {
+  _canvasToPngBuffer(canvas, customHeight) {
     return new Promise(async resolve => {
       let canvasImageBuffer = Buffer.from([]);
+      const originalCanvasHeight = canvas.height;
+      if (!isNaN(customHeight)) canvas.height = customHeight;
 
       const writeStream = new Writable();
       writeStream._write = function (chunk, encoding, cb) {
@@ -225,28 +226,29 @@ class PureImagePrinter {
         cb();
       }
       writeStream.on('finish', async () => {
+        canvas.height = originalCanvasHeight;
         resolve(canvasImageBuffer);
       });
       await PureImage.encodePNGToStream(canvas, writeStream);
     });
   }
 
-  async _getPrintPngBuffer() {
+  /*async _getPrintPngBuffer() {
     const canvasImageBuffer = await this._canvasToPngBuffer(this.canvas);
     const jimpImg = await Jimp.read(canvasImageBuffer);
     jimpImg.crop(0, 0, this.canvasWidth, this.currentPrintY);
 
     return jimpImg.getBufferAsync(Jimp.MIME_PNG)
-  }
+  }*/
 
   async printToFile(outputFilePath) {
-    const pngBuffer = await this._getPrintPngBuffer();
+    const pngBuffer = await this._canvasToPngBuffer(this.canvas, this.currentPrintY);
 
     fs.writeFileSync(path.resolve(outputFilePath), pngBuffer);
   }
 
   async print() {
-    const pngBuffer = await this._getPrintPngBuffer();
+    const pngBuffer = await this._canvasToPngBuffer(this.canvas, this.currentPrintY);
     const png = PNG.sync.read(pngBuffer);
 
     if (typeof this._externalPrintPng === 'function' && typeof this._externalPrint === 'function') {
