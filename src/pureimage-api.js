@@ -66,6 +66,7 @@ class PureImagePrinter {
     this.fontItalic = false;
 
     this.fontFamily = DEFAULT_FONT;
+    this.currentFont = null;
     this.fontFilePaths = {
       normal: path.resolve(__dirname + `/../assets/fonts/${this.fontFamily}.ttf`),
       bold: path.resolve(__dirname + `/../assets/fonts/${this.fontFamily}_Bold.ttf`),
@@ -376,9 +377,10 @@ class PureImagePrinter {
       fontFilePath = this.fontFilePaths.normal;
     }
 
-    const fontLoader = PureImage.registerFont(fontFilePath, this.fontFamily);
-
-    fontLoader.loadSync();
+    if (!this.currentFont || this.currentFont !== fontFilePath) {
+      PureImage.registerFont(fontFilePath, this.fontFamily).loadSync();
+      this.currentFont = fontFilePath;
+    }
 
     CanvasTxt.align = this.textAlign;
     CanvasTxt.fontSize = this.fontSize;
