@@ -1,5 +1,4 @@
-const PureImage = require('pureimage');
-const uint32 = require('pureimage/src/uint32');
+const PureImage = require('@gigasource/pureimage');
 const path = require('path');
 const fs = require('fs');
 const CanvasTxt = require('./canvas-txt');
@@ -289,7 +288,9 @@ class PureImagePrinter {
       writeStream.on('finish', () => {
         // this.printImage(qrBinData).then(resolve);
 
-        // because we use queue to execute functions, .then is no longer needed
+        /* because we use queue to execute functions, .then is no longer needed
+        printImage is pushed to the head of the execution queue before printQrCode resolves
+        -> will be executed before any other functions */
         this.printImage(qrBinData);
         resolve();
       });
@@ -304,8 +305,7 @@ class PureImagePrinter {
     let canvas = PureImage.make(this.printWidth, height + 10, {});
     let canvasContext = canvas.getContext('2d');
 
-    canvasContext.fillStyle = 'white';
-    canvasContext.fillRect(0, 0, this.printWidth, height);
+    this._fillCanvasWithWhite(canvas);
 
     JsBarcode(canvas, text, {
       height,
@@ -400,41 +400,15 @@ class PureImagePrinter {
       const width = Math.floor(this.canvasWidth);
       const height = Math.floor(CANVAS_HEIGHT_EXTENSION);
 
-      const bufferToAppend = Buffer.alloc(width * height * 4);
-
-      const color = 0xffffffff // white background
-      for (let j = 0; j < height; j++) {
-        for (let i = 0; i < width; i++) {
-          setPixelRGBA(i, j, color);
-        }
-      }
+      const bufferToAppend = Buffer.alloc(Math.ceil(width * height / 8), 255);
 
       this.canvas.data = Buffer.concat([this.canvas.data, bufferToAppend]);
-
-      function calculateIndex(x, y) {
-        x = Math.floor(x);
-        y = Math.floor(y);
-        if (x < 0 || y < 0 || x >= width || y >= height) return 0;
-        return (width * y + x) * 4;
-      }
-
-      function setPixelRGBA(x, y, rgba) {
-        let i = calculateIndex(x, y);
-        const bytes = uint32.getBytesBigEndian(rgba);
-        bufferToAppend[i] = bytes[0];
-        bufferToAppend[i + 1] = bytes[1];
-        bufferToAppend[i + 2] = bytes[2];
-        bufferToAppend[i + 3] = bytes[3];
-      }
     }
   }
 
-  _fillCanvasWithWhite() {
-    for (let i = 0; i < this.canvas.width; i++) {
-      for (let j = 0; j < this.canvas.height; j++) {
-        this.canvas.setPixelRGBA(i, j, 0xffffffff);
-      }
-    }
+  _fillCanvasWithWhite(canvas = this.canvas) {
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height, 0xffffffff);
   }
 
   _shrinkCanvasHeight() {
