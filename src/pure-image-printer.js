@@ -6,46 +6,17 @@ const {Readable, Writable} = require('stream');
 const {PNG} = require('pngjs');
 const QRCode = require('qrcode');
 const JsBarcode = require('jsbarcode');
-const queue = require('queue');
-const {v4: uuidv4} = require('uuid');
-
-const MAX_NUMBER_OF_CANVAS = wkPool.cpus > 1 ? wkPool.cpus - 1 : 1;
-
-const instanceExecutionMap = {};
-const instanceBufferMap = {};
-
-// queue to make instances run sequentially
-const printQueue = queue({
-  concurrency: 1,
-  autostart: true,
-});
-
-const taskExecutionQueue = queue({
-  concurrency: 1,
-  autostart: true,
-});
-
-const taskListMapping = {
-  // map an instance id to a list of tasks
-}
-
-let executingInstanceId = null;
-const INSTANCE_EXECUTION_TIMEOUT = 1000 * 60 * 3; // 3 minutes
 
 const DEFAULT_CANVAS_WIDTH = 560;
-const DEFAULT_CANVAS_HEIGHT = 2000;
+const DEFAULT_CANVAS_HEIGHT = 700;
 const DEFAULT_FONT_SIZE = 24;
 const DEFAULT_NEW_LINE_FONT_SIZE = 4;
 const DEFAULT_FONT = 'Verdana';
 
 // the resizing amount, example: 2500 + CANVAS_HEIGHT_EXTENSION + CANVAS_HEIGHT_EXTENSION...
-const CANVAS_HEIGHT_EXTENSION = 1000;
+const CANVAS_HEIGHT_EXTENSION = 500;
 // example: canvas height is 2500, if printY >= canvas height - CANVAS_HEIGHT_RESIZING_REMAINING (=2000) then resizing will happen
-const CANVAS_HEIGHT_RESIZING_REMAINING = 500;
-
-let canvas = PureImage.make(DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT, {});
-let canvasContext = canvas.getContext('2d');
-let firstInstanceCreated = false;
+const CANVAS_HEIGHT_RESIZING_REMAINING = 300;
 
 class PureImagePrinter {
   constructor(width = DEFAULT_CANVAS_WIDTH, ...args) {
@@ -55,50 +26,41 @@ class PureImagePrinter {
     if (typeof args[0] === 'object') opts = args[0];
     else if (typeof args[1] === 'object') opts = args[1]; // backward compatibility;
 
-    const {printFunctions = {}} = opts;
-    this._externalPrintPng = printFunctions.printPng;
-    this._externalPrint = printFunctions.print;
-    CanvasTxt.vAlign = 'top';
+    const {printFunctions = {}, createCanvas = true} = opts;
 
-    this.canvasWidth = width;
+    if (createCanvas) {
+      this._externalPrintPng = printFunctions.printPng;
+      this._externalPrint = printFunctions.print;
+      CanvasTxt.vAlign = 'top';
 
-    this.paddingHorizontal = 0;
-    this.paddingVertical = 0;
-    this.printWidth = this.canvasWidth - this.paddingHorizontal * 2;
+      this.canvasWidth = width;
 
-    this.currentPrintX = this.paddingHorizontal;
-    this.currentPrintY = this.paddingVertical;
+      this.paddingHorizontal = 0;
+      this.paddingVertical = 0;
+      this.printWidth = this.canvasWidth - this.paddingHorizontal * 2;
 
-    this.textAlign = 'left';
-    this.fontSize = DEFAULT_FONT_SIZE;
-    this.newLineFontSize = DEFAULT_NEW_LINE_FONT_SIZE;
-    this.fontBold = false;
-    this.fontItalic = false;
+      this.currentPrintX = this.paddingHorizontal;
+      this.currentPrintY = this.paddingVertical;
 
-    this.fontFamily = DEFAULT_FONT;
-    this.currentFont = null;
-    this.fontFilePaths = {
-      normal: path.resolve(__dirname + `/../assets/fonts/${this.fontFamily}.ttf`),
-      bold: path.resolve(__dirname + `/../assets/fonts/${this.fontFamily}_Bold.ttf`),
-      italic: path.resolve(__dirname + `/../assets/fonts/${this.fontFamily}_Italic.ttf`),
-      boldItalic: path.resolve(__dirname + `/../assets/fonts/${this.fontFamily}_Bold_Italic.ttf`),
-    }
+      this.textAlign = 'left';
+      this.fontSize = DEFAULT_FONT_SIZE;
+      this.newLineFontSize = DEFAULT_NEW_LINE_FONT_SIZE;
+      this.fontBold = false;
+      this.fontItalic = false;
 
-    if (width !== canvas.width) {
-      canvas = PureImage.make(width, DEFAULT_CANVAS_HEIGHT, {});
-      canvasContext = canvas.getContext('2d');
-    }
+      this.fontFamily = DEFAULT_FONT;
+      this.currentFont = null;
+      this.fontFilePaths = {
+        normal: path.resolve(__dirname + `/../assets/fonts/${this.fontFamily}.ttf`),
+        bold: path.resolve(__dirname + `/../assets/fonts/${this.fontFamily}_Bold.ttf`),
+        italic: path.resolve(__dirname + `/../assets/fonts/${this.fontFamily}_Italic.ttf`),
+        boldItalic: path.resolve(__dirname + `/../assets/fonts/${this.fontFamily}_Bold_Italic.ttf`),
+      }
 
-    this.canvas = canvas;
-    this.canvasContext = canvasContext;
-
-    if (!firstInstanceCreated) {
-      firstInstanceCreated = true;
+      this.canvas = PureImage.make(DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT, {});
+      this.canvasContext = this.canvas.getContext('2d');
       this._fillCanvasWithWhite();
     }
-
-    this.instanceId = uuidv4();
-    this.executionQueue = [];
   }
 
   alignLeft() {
@@ -244,14 +206,6 @@ class PureImagePrinter {
       await PureImage.encodePNGToStream(canvas, writeStream);
     });
   }
-
-  /*async _getPrintPngBuffer() {
-    const canvasImageBuffer = await this._canvasToPngBuffer(this.canvas);
-    const jimpImg = await Jimp.read(canvasImageBuffer);
-    jimpImg.crop(0, 0, this.canvasWidth, this.currentPrintY);
-
-    return jimpImg.getBufferAsync(Jimp.MIME_PNG)
-  }*/
 
   async printToFile(outputFilePath) {
     const pngBuffer = await this._canvasToPngBuffer(this.canvas, this.currentPrintY);
@@ -432,130 +386,14 @@ class PureImagePrinter {
   }
 
   cleanup() {
-    this._shrinkCanvasHeight();
-    this._fillCanvasWithWhite();
+    if (this.canvas) {
+      this._shrinkCanvasHeight();
+      this._fillCanvasWithWhite();
+    }
 
-    delete taskListMapping[this.instanceId];
     this.canvasContext = null;
     this.canvas = null;
-    executingInstanceId = null;
   }
 }
 
-function applyQueueFunctionProxy(obj, keys) {
-  const instanceId = obj.instanceId;
-  let instanceExecutionTimeout;
-
-  keys.forEach(key => {
-    if (key.startsWith('_') || typeof obj[key] !== 'function' || key === 'constructor') return;
-
-    obj[key] = new Proxy(obj[key], {
-      apply(target, thisArg, argArray) {
-        return new Promise(((resolve, reject) => {
-          // function terminateInstanceExecution() {
-          //   executingInstanceId = null;
-          //   delete taskListMapping[instanceId];
-          //   obj._fillCanvasWithWhite();
-          //   obj._shrinkCanvasHeight();
-          //   instanceExecutionTimeout = null;
-          // }
-          //
-          // function clearExecutionTimeout() {
-          //   if (instanceExecutionTimeout) {
-          //     clearTimeout(instanceExecutionTimeout);
-          //     instanceExecutionTimeout = null;
-          //   }
-          // }
-          //
-          // if (!instanceExecutionTimeout) instanceExecutionTimeout = setTimeout(terminateInstanceExecution, INSTANCE_EXECUTION_TIMEOUT);
-          //
-          // if (!executingInstanceId && key !== 'cleanup') executingInstanceId = instanceId;
-          //
-          // taskListMapping[instanceId] = taskListMapping[instanceId] || [];
-          // taskListMapping[instanceId].push(async () => {
-          //   try {
-          //     const res = await target.apply(thisArg, argArray);
-          //
-          //     if (key === 'cleanup') clearExecutionTimeout();
-          //
-          //     resolve(res);
-          //   } catch (e) {
-          //     clearExecutionTimeout()
-          //     terminateInstanceExecution();
-          //     reject(e);
-          //   }
-          // });
-
-          const executionFunction = async ({instanceId, key, delay}, cb) => {
-            // if an instance has finished executing, let another instance starts
-            if (!executingInstanceId && key !== 'cleanup') executingInstanceId = instanceId;
-
-            // if current task does not belong to executing instance, push it to the end of the queue
-            if (executingInstanceId !== instanceId) {
-              function fn() {
-                if (executingInstanceId === null && key === 'cleanup') {
-                  resolve();
-                } else { // exclude the case when function is cleanup and executingInstanceId === null
-                  taskExecutionQueue.push(executionFunction.bind(null, {instanceId, key, delay: 1000}));
-                }
-
-                cb();
-              }
-
-              if (!isNaN(delay) && delay > 0) {
-                setTimeout(fn, delay);
-              } else {
-                fn();
-              }
-
-              return;
-            }
-
-            const taskListToExecute = taskListMapping && taskListMapping[instanceId];
-
-            if (taskListToExecute && taskListToExecute.length > 0) {
-              const functionToExecute = taskListToExecute.shift();
-              await functionToExecute();
-            }
-
-            cb();
-          };
-
-          // taskExecutionQueue.push(executionFunction.bind(null, {instanceId, key}));
-          obj.executionQueue = obj.executionQueue || [];
-          obj.executionQueue.push(executionFunction.bind(null, {instanceId, key}));
-          resolve();
-        }));
-      }
-    });
-  });
-}
-
-function startPrinting(instanceExecutionQueue) {
-  const commandsPerWorker = Math.ceil(instanceExecutionQueue.length / MAX_NUMBER_OF_CANVAS);
-  const workerCommands = [];
-
-  let sliceIndex = 0;
-  while (sliceIndex < instanceExecutionQueue.length) {
-    workerCommands.push(instanceExecutionQueue.slice(sliceIndex, sliceIndex + commandsPerWorker));
-    sliceIndex += commandsPerWorker;
-  }
-
-  workerPool.exec(() => {
-
-  }, [])
-
-  printQueue.push((cb) => {
-
-
-    cb();
-  });
-}
-
-module.exports = new Proxy(PureImagePrinter, {
-  construct(target, argArray) {
-    const newObj = new target(...argArray);
-    applyQueueFunctionProxy(newObj, Reflect.ownKeys(newObj.__proto__));
-    return newObj;
-  }
-});
+module.exports = PureImagePrinter;

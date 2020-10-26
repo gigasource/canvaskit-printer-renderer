@@ -1,1 +1,1 @@
-module.exports = require('./src/pureimage-api.js');
+module.exports = require('./src/execution-queue.js');

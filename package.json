@@ -17,11 +17,12 @@
   },
   "homepage": "https://github.com/gigasource/canvaskit-printer-renderer#readme",
   "dependencies": {
+    "@gigasource/pureimage": "^0.0.1",
     "jsbarcode": "^3.11.3",
     "pngjs": "^5.0.0",
-    "@gigasource/pureimage": "^0.0.1",
     "qrcode": "^1.4.4",
     "queue": "^6.0.1",
-    "uuid": "^8.3.1"
+    "uuid": "^8.3.1",
+    "workerpool": "^6.0.2"
   }
 }
