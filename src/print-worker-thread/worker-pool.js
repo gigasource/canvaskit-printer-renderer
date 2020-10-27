@@ -1,7 +1,10 @@
-const queue = require('queue');
-const {execPrintTasks, NUMBER_OF_WORKER} = require('./print-worker');
-const PureImagePrinter = require('./pure-image-printer');
-const {v4: uuidv4} = require('uuid');
+const path = require('path');
+const wkPool = require('workerpool');
+
+const PureImagePrinter = require('../pure-image-printer');
+const COMMANDS_PER_WORKER = 1;
+
+const workerPool = wkPool.pool(path.resolve(`${__dirname}/worker-script.js`));
 
 // functions that can be divided to separated workers
 const DIVISIBLE_FUNCTIONS = [
@@ -30,45 +33,24 @@ const INDIVISIBLE_FUNCTIONS = [
   'setFontSize',
 ];
 
-const instanceExecutionMap = {};
-const instanceBufferMap = {};
-
-// queue to make instances run sequentially
-const printQueue = queue({
-  concurrency: 1,
-  autostart: true,
-});
-
-const taskExecutionQueue = queue({
-  concurrency: 1,
-  autostart: true,
-});
-
-const taskListMapping = {
-  // map an instance id to a list of tasks
-}
-
-let executingInstanceId = null;
-const INSTANCE_EXECUTION_TIMEOUT = 1000 * 60 * 3; // 3 minutes
-
-
 function applyQueueFunctionProxy(obj, keys) {
-  obj.instanceId = uuidv4();
   obj.divisibleCommands = [];
   obj.indivisibleCommands = [];
+  obj.commandIndex = 0;
 
   keys.forEach(key => {
     if (key.startsWith('_') || typeof obj[key] !== 'function' || key === 'constructor') return;
 
     obj[key] = new Proxy(obj[key], {
       apply(target, thisArg, argArray) {
-        return new Promise((async (resolve, reject) => {
+        return new Promise((async (resolve) => {
           if (DIVISIBLE_FUNCTIONS.includes(key)) {
-            obj.divisibleCommands.push({fnName: key, argArray});
+            obj.divisibleCommands.push({fnName: key, argArray, commandIndex: obj.commandIndex++});
           } else if (INDIVISIBLE_FUNCTIONS.includes(key)) {
-            obj.divisibleCommands.push({fnName: key, argArray});
+            obj.indivisibleCommands.push({fnName: key, argArray, commandIndex: obj.commandIndex++});
           } else if (key === 'print' || key === 'printToFile') {
             const buffers = await renderBuffers(obj);
+
             const canvasData = buffers.reduce((acc, {data, width, height}) => ({
               finalBuffer: Buffer.concat([acc.finalBuffer, data.slice(0, Math.ceil(width * height / 8))]),
               finalHeight: acc.finalHeight + height,
@@ -91,8 +73,12 @@ function applyQueueFunctionProxy(obj, keys) {
             thisArg.canvas.width = originalCanvasWidth;
             thisArg.canvas.height = originalCanvasHeight;
             thisArg.currentPrintY = originalPrintY;
+
+            obj.commandIndex = 0;
           } else {
             await target.apply(thisArg, argArray);
+
+            obj.commandIndex = 0;
           }
 
           resolve();
@@ -102,29 +88,43 @@ function applyQueueFunctionProxy(obj, keys) {
   });
 }
 
-async function renderBuffers({divisibleCommands, indivisibleCommands, instanceId}) {
-  const commandsPerWorker = Math.ceil(divisibleCommands.length / NUMBER_OF_WORKER);
+async function renderBuffers({divisibleCommands, indivisibleCommands}) {
+  const commandsPerWorker = COMMANDS_PER_WORKER;
   let buffers = [];
 
   let sliceIndex = 0;
   while (sliceIndex < divisibleCommands.length) {
-    const workerCommands = [...indivisibleCommands, ...divisibleCommands.slice(sliceIndex, sliceIndex + commandsPerWorker)];
-    buffers.push(execPrintTasks(workerCommands, instanceId));
+    const slicedCommands = divisibleCommands.slice(sliceIndex, sliceIndex + commandsPerWorker);
+
+    if (slicedCommands.length === 0) continue;
+
+    const workerCommands = [...indivisibleCommands, ...slicedCommands]
+      .filter(e => e.commandIndex <= slicedCommands[slicedCommands.length - 1].commandIndex)
+      .sort((e1, e2) => e1.commandIndex - e2.commandIndex);
+
+    buffers.push(execPrintTasks(workerCommands));
 
     sliceIndex += commandsPerWorker;
   }
 
-  buffers = await Promise.all(buffers);
-  return buffers;
+  return Promise.all(buffers);
+}
+
+function execPrintTasks(printTasks) {
+  return new Promise((resolve, reject) => {
+    workerPool.exec('execPrintTasks', [printTasks])
+      .then(res => resolve(res))
+      .catch(err => reject(err));
+  });
 }
 
 module.exports = new Proxy(PureImagePrinter, {
   construct(target, argArray) {
-    let opts = {createCanvas: false};
+    const width = argArray[0] || null;
+    const height = argArray[1] || null;
+    const opts = argArray[2] || {};
 
-    if (argArray.length > 0) opts = {...argArray.pop(), ...opts};
-
-    const newObj = new target(...argArray, opts);
+    const newObj = new target(width, height, opts);
     applyQueueFunctionProxy(newObj, Reflect.ownKeys(newObj.__proto__));
     return newObj;
   }

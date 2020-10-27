@@ -4,40 +4,61 @@ const fs = require('fs');
 const CanvasTxt = require('./canvas-txt');
 const {Readable, Writable} = require('stream');
 const {PNG} = require('pngjs');
-const QRCode = require('qrcode');
-const JsBarcode = require('jsbarcode');
+
+let QRCode;
+let JsBarcode;
 
 const DEFAULT_CANVAS_WIDTH = 560;
 const DEFAULT_CANVAS_HEIGHT = 700;
 const DEFAULT_FONT_SIZE = 24;
 const DEFAULT_NEW_LINE_FONT_SIZE = 4;
-const DEFAULT_FONT = 'Verdana';
+const BASE_FONT_FAMILY = 'Verdana';
 
 // the resizing amount, example: 2500 + CANVAS_HEIGHT_EXTENSION + CANVAS_HEIGHT_EXTENSION...
 const CANVAS_HEIGHT_EXTENSION = 500;
 // example: canvas height is 2500, if printY >= canvas height - CANVAS_HEIGHT_RESIZING_REMAINING (=2000) then resizing will happen
 const CANVAS_HEIGHT_RESIZING_REMAINING = 300;
 
+const fontInfo = {
+  normal: {
+    fontFilePath: path.resolve(__dirname + `/../assets/fonts/${BASE_FONT_FAMILY}.ttf`),
+    fontFamily: 'Verdana',
+  },
+  bold: {
+    fontFilePath: path.resolve(__dirname + `/../assets/fonts/${BASE_FONT_FAMILY}_Bold.ttf`),
+    fontFamily: 'Verdana_Bold',
+  },
+  italic: {
+    fontFilePath: path.resolve(__dirname + `/../assets/fonts/${BASE_FONT_FAMILY}_Italic.ttf`),
+    fontFamily: 'Verdana_Italic',
+  },
+  boldItalic: {
+    fontFilePath: path.resolve(__dirname + `/../assets/fonts/${BASE_FONT_FAMILY}_Bold_Italic.ttf`),
+    fontFamily: 'Verdana_Bold_Italic',
+  },
+}
+
+Object.keys(fontInfo).forEach(fontType => {
+  const {fontFilePath, fontFamily} = fontInfo[fontType];
+  PureImage.registerFont(fontFilePath, fontFamily).loadSync();
+});
+
 class PureImagePrinter {
-  constructor(width = DEFAULT_CANVAS_WIDTH, ...args) {
-    // print functions from pos-restaurant, used for backward compatibility
-    let opts = {};
-
-    if (typeof args[0] === 'object') opts = args[0];
-    else if (typeof args[1] === 'object') opts = args[1]; // backward compatibility;
-
-    const {printFunctions = {}, createCanvas = true} = opts;
+  constructor(width, height, opts = {}) {
+    const {printFunctions = {}, createCanvas = true, noResizing} = opts;
 
     if (createCanvas) {
       this._externalPrintPng = printFunctions.printPng;
       this._externalPrint = printFunctions.print;
       CanvasTxt.vAlign = 'top';
 
-      this.canvasWidth = width;
+      this.originalCanvasWidth = !isNaN(width) ? width : DEFAULT_CANVAS_WIDTH;
+      this.originalCanvasHeight = !isNaN(height) ? height : DEFAULT_CANVAS_HEIGHT;
+      this.noResizing = noResizing;
 
       this.paddingHorizontal = 0;
       this.paddingVertical = 0;
-      this.printWidth = this.canvasWidth - this.paddingHorizontal * 2;
+      this.printWidth = this.originalCanvasWidth - this.paddingHorizontal * 2;
 
       this.currentPrintX = this.paddingHorizontal;
       this.currentPrintY = this.paddingVertical;
@@ -48,16 +69,7 @@ class PureImagePrinter {
       this.fontBold = false;
       this.fontItalic = false;
 
-      this.fontFamily = DEFAULT_FONT;
-      this.currentFont = null;
-      this.fontFilePaths = {
-        normal: path.resolve(__dirname + `/../assets/fonts/${this.fontFamily}.ttf`),
-        bold: path.resolve(__dirname + `/../assets/fonts/${this.fontFamily}_Bold.ttf`),
-        italic: path.resolve(__dirname + `/../assets/fonts/${this.fontFamily}_Italic.ttf`),
-        boldItalic: path.resolve(__dirname + `/../assets/fonts/${this.fontFamily}_Bold_Italic.ttf`),
-      }
-
-      this.canvas = PureImage.make(DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT, {});
+      this.canvas = PureImage.make(this.originalCanvasWidth, this.originalCanvasHeight, {});
       this.canvasContext = this.canvas.getContext('2d');
       this._fillCanvasWithWhite();
     }
@@ -127,7 +139,7 @@ class PureImagePrinter {
     const y = this.currentPrintY - DEFAULT_FONT_SIZE / 2;
 
     this.canvasContext.fillStyle = "black";
-    this.canvasContext.drawLine({start: {x: 0, y}, end: {x: this.canvasWidth, y}});
+    this.canvasContext.drawLine({start: {x: 0, y}, end: {x: this.originalCanvasWidth, y}});
   }
 
   tableCustom(columns) {
@@ -191,7 +203,7 @@ class PureImagePrinter {
   _canvasToPngBuffer(canvas, customHeight) {
     return new Promise(async resolve => {
       let canvasImageBuffer = Buffer.from([]);
-      const originalCanvasHeight = canvas.height;
+      const currentCanvasHeight = canvas.height;
       if (!isNaN(customHeight)) canvas.height = customHeight;
 
       const writeStream = new Writable();
@@ -200,7 +212,7 @@ class PureImagePrinter {
         cb();
       }
       writeStream.on('finish', async () => {
-        canvas.height = originalCanvasHeight;
+        canvas.height = currentCanvasHeight;
         resolve(canvasImageBuffer);
       });
       await PureImage.encodePNGToStream(canvas, writeStream);
@@ -208,9 +220,15 @@ class PureImagePrinter {
   }
 
   async printToFile(outputFilePath) {
-    const pngBuffer = await this._canvasToPngBuffer(this.canvas, this.currentPrintY);
+    const currentCanvasHeight = this.canvas.height;
+    this.canvas.height = this.currentPrintY;
 
-    fs.writeFileSync(path.resolve(outputFilePath), pngBuffer);
+    const writeStream = fs.createWriteStream(path.resolve(outputFilePath));
+    writeStream.on('finish', async () => {
+      this.canvas.height = currentCanvasHeight;
+    });
+
+    await PureImage.encodePNGToStream(this.canvas, writeStream);
   }
 
   async print() {
@@ -241,6 +259,8 @@ class PureImagePrinter {
   }
 
   printQrCode(text) {
+    if (!QRCode) QRCode = require('qrcode');
+
     if (typeof text !== 'string') text = text.toString();
 
     return new Promise(resolve => {
@@ -252,13 +272,7 @@ class PureImagePrinter {
         cb();
       }
       writeStream.on('finish', () => {
-        // this.printImage(qrBinData).then(resolve);
-
-        /* because we use queue to execute functions, .then is no longer needed
-        printImage is pushed to the head of the execution queue before printQrCode resolves
-        -> will be executed before any other functions */
-        this.printImage(qrBinData);
-        resolve();
+        this._printImage(qrBinData).then(resolve);
       });
 
       QRCode.toFileStream(writeStream, text);
@@ -266,6 +280,8 @@ class PureImagePrinter {
   }
 
   async printBarcode(text, opts = {}) {
+    if (!JsBarcode) JsBarcode = require('jsbarcode');
+
     const {height = 80, width = 3.5, displayValue = false} = opts;
 
     let canvas = PureImage.make(this.printWidth, height + 10, {});
@@ -283,14 +299,17 @@ class PureImagePrinter {
     });
 
     const barcodeImageBuffer = await this._canvasToPngBuffer(canvas);
-    this.printImage(barcodeImageBuffer).then(() => {
-      canvasContext = null;
-      canvas.data = null;
-      canvas = null;
-    });
+    await this._printImage(barcodeImageBuffer);
+    canvasContext = null;
+    canvas.data = null;
+    canvas = null;
   }
 
-  async printImage(imageInput) {
+  printImage(imageInput) {
+    return this._printImage(imageInput);
+  }
+
+  async _printImage(imageInput) {
     let imageX = this.currentPrintX;
     let imageData;
 
@@ -315,7 +334,7 @@ class PureImagePrinter {
         break;
       }
       case 'center': {
-        imageX = this.canvasWidth / 2 - imgWidth / 2;
+        imageX = this.originalCanvasWidth / 2 - imgWidth / 2;
         break
       }
     }
@@ -331,24 +350,20 @@ class PureImagePrinter {
   _drawParagraph(text, x, y, layoutWidth) {
     if (typeof text !== 'string') text = text.toString();
 
-    let fontFilePath;
+    let fontFamily;
 
     if (this.fontBold && this.fontItalic) {
-      fontFilePath = this.fontFilePaths.boldItalic;
+      fontFamily = fontInfo.boldItalic.fontFamily;
     } else if (this.fontBold) {
-      fontFilePath = this.fontFilePaths.bold;
+      fontFamily = fontInfo.bold.fontFamily;
     } else if (this.fontItalic) {
-      fontFilePath = this.fontFilePaths.italic;
+      fontFamily = fontInfo.italic.fontFamily;
     } else {
-      fontFilePath = this.fontFilePaths.normal;
-    }
-
-    if (!this.currentFont || this.currentFont !== fontFilePath) {
-      PureImage.registerFont(fontFilePath, this.fontFamily).loadSync();
-      this.currentFont = fontFilePath;
+      fontFamily = fontInfo.normal.fontFamily;
     }
 
     CanvasTxt.align = this.textAlign;
+    CanvasTxt.font = fontFamily;
     CanvasTxt.fontSize = this.fontSize;
     this.canvasContext.fillStyle = "black";
     const {height, width} = CanvasTxt.drawText(this.canvasContext, text, x, y, layoutWidth, this.fontSize);
@@ -360,10 +375,10 @@ class PureImagePrinter {
     this.currentPrintY += value;
     this.currentPrintY = Math.round(this.currentPrintY);
 
-    if (this.currentPrintY + CANVAS_HEIGHT_RESIZING_REMAINING >= this.canvas.height) {
+    if (!this.noResizing && this.currentPrintY + CANVAS_HEIGHT_RESIZING_REMAINING >= this.canvas.height) {
       this.canvas.height += CANVAS_HEIGHT_EXTENSION;
 
-      const width = Math.floor(this.canvasWidth);
+      const width = Math.floor(this.originalCanvasWidth);
       const height = Math.floor(CANVAS_HEIGHT_EXTENSION);
 
       const bufferToAppend = Buffer.alloc(Math.ceil(width * height / 8), 255);
@@ -373,20 +388,19 @@ class PureImagePrinter {
   }
 
   _fillCanvasWithWhite(canvas = this.canvas) {
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height, 0xffffffff);
+    canvas.data.fill(255);
   }
 
   _shrinkCanvasHeight() {
-    this.canvas.height = DEFAULT_CANVAS_HEIGHT;
-    const newBufferSize = Math.floor(this.canvasWidth) * this.canvas.height * 4;
+    this.canvas.height = this.originalCanvasHeight;
+    const newBufferSize = Math.floor(this.originalCanvasWidth) * Math.floor(this.originalCanvasHeight) / 8;
     this.canvas.data = this.canvas.data.slice(0, newBufferSize);
     this.currentPrintX = 0;
     this.currentPrintY = 0;
   }
 
-  cleanup() {
-    if (this.canvas) {
+  cleanup(resetCanvas = true) {
+    if (this.canvas && resetCanvas) {
       this._shrinkCanvasHeight();
       this._fillCanvasWithWhite();
     }
