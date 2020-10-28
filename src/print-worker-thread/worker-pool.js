@@ -1,7 +1,6 @@
 const path = require('path');
 const wkPool = require('workerpool');
 
-const PureImagePrinter = require('../pure-image-printer');
 const COMMANDS_PER_WORKER = 1;
 
 const workerPool = wkPool.pool(path.resolve(`${__dirname}/worker-script.js`));
@@ -33,7 +32,7 @@ const INDIVISIBLE_FUNCTIONS = [
   'setFontSize',
 ];
 
-function applyQueueFunctionProxy(obj, keys) {
+function applyWorkerPool(obj, keys) {
   obj.divisibleCommands = [];
   obj.indivisibleCommands = [];
   obj.commandIndex = 0;
@@ -118,14 +117,7 @@ function execPrintTasks(printTasks) {
   });
 }
 
-module.exports = new Proxy(PureImagePrinter, {
-  construct(target, argArray) {
-    const width = argArray[0] || null;
-    const height = argArray[1] || null;
-    const opts = argArray[2] || {};
-
-    const newObj = new target(width, height, opts);
-    applyQueueFunctionProxy(newObj, Reflect.ownKeys(newObj.__proto__));
-    return newObj;
-  }
-});
+module.exports = {
+  applyWorkerPool,
+  workerPool,
+}

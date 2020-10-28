@@ -45,6 +45,8 @@ Object.keys(fontInfo).forEach(fontType => {
 
 class PureImagePrinter {
   constructor(width, height, opts = {}) {
+    if (height && typeof height === 'object') opts = height;
+
     const {printFunctions = {}, createCanvas = true, noResizing} = opts;
 
     if (createCanvas) {
@@ -285,7 +287,6 @@ class PureImagePrinter {
     const {height = 80, width = 3.5, displayValue = false} = opts;
 
     let canvas = PureImage.make(this.printWidth, height + 10, {});
-    let canvasContext = canvas.getContext('2d');
 
     this._fillCanvasWithWhite(canvas);
 
@@ -300,7 +301,6 @@ class PureImagePrinter {
 
     const barcodeImageBuffer = await this._canvasToPngBuffer(canvas);
     await this._printImage(barcodeImageBuffer);
-    canvasContext = null;
     canvas.data = null;
     canvas = null;
   }
