@@ -1,9 +1,10 @@
 {
   "name": "@gigasource/pureimage-printer-renderer",
-  "version": "0.0.19",
+  "version": "0.0.20",
   "description": "Use pureimage to render bill & report images for printers to print",
   "main": "index.js",
   "scripts": {
+    "prepare": "node scripts/pkg.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -23,5 +24,9 @@
     "qrcode": "1.4.4",
     "uuid": "^8.3.1",
     "workerpool": "6.0.2"
+  },
+  "devDependencies": {
+    "giga-pkg-patches": "github:gigasource/giga-pkg-patches#1.0.5",
+    "pkg": "^4.4.4"
   }
 }

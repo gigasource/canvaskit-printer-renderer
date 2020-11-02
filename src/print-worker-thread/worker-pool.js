@@ -1,9 +1,12 @@
 const path = require('path');
 const wkPool = require('workerpool');
+const fs = require('fs');
 
 const COMMANDS_PER_WORKER = 1;
 
-const workerPool = wkPool.pool(path.resolve(`${__dirname}/worker-script.js`));
+let scriptDir = fs.existsSync(path.resolve(`${__dirname}/worker-script.js`)) ? __dirname : process.cwd();
+
+const workerPool = wkPool.pool(path.resolve(`${scriptDir}/worker-script.js`));
 
 // functions that can be divided to separated workers
 const DIVISIBLE_FUNCTIONS = [
@@ -51,7 +54,7 @@ function applyWorkerPool(obj, keys) {
             const buffers = await renderBuffers(obj);
 
             const canvasData = buffers.reduce((acc, {data, width, height}) => ({
-              finalBuffer: Buffer.concat([acc.finalBuffer, data.slice(0, Math.ceil(width * height / 8))]),
+              finalBuffer: Buffer.concat([acc.finalBuffer, data]),
               finalHeight: acc.finalHeight + height,
               finalWidth: Math.max(acc.finalWidth, width),
             }), {finalBuffer: Buffer.from([]), finalHeight: 0, finalWidth: 0});
