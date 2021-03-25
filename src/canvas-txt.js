@@ -12,6 +12,7 @@ const canvasTxt = {
   font: 'Arial',
   lineHeight: null,
   justify: false,
+  invert: false,
   /**
    *
    * @param {CanvasRenderingContext2D} ctx
@@ -144,8 +145,22 @@ const canvasTxt = {
       txtY -= negoffset
     }
     //print all lines of text
+
+    const backgroundColor = this.invert ? "black" : "white"
+    const textColor = this.invert ? "white" : "black"
     textarray.forEach(txtline => {
       txtline = txtline.trim()
+      if (txtline && backgroundColor === 'black') {
+        const estimateWidth = ctx.measureText(txtline).width
+        ctx.fillStyle = backgroundColor
+        let xStart
+        if (this.align === 'center') xStart = x + width / 2 - estimateWidth / 2
+        if (this.align === 'left') xStart = x
+        if (this.align === 'right') xStart = x + width - estimateWidth
+        ctx.fillRect(xStart, txtY - charHeight, estimateWidth, charHeight + 3)
+      }
+
+      ctx.fillStyle = textColor
       ctx.fillText(txtline, textanchor, txtY)
       txtY += charHeight
     })

@@ -57,7 +57,7 @@ class PureImagePrinter {
       this.originalCanvasWidth = !isNaN(width) ? width : DEFAULT_CANVAS_WIDTH;
       this.originalCanvasHeight = !isNaN(height) ? height : DEFAULT_CANVAS_HEIGHT;
       this.noResizing = noResizing;
-
+      this.invert(false)
       this.paddingHorizontal = 0;
       this.paddingVertical = 0;
       this.printWidth = this.originalCanvasWidth - this.paddingHorizontal * 2;
@@ -73,6 +73,7 @@ class PureImagePrinter {
 
       this.canvas = PureImage.make(this.originalCanvasWidth, this.originalCanvasHeight, {});
       this.canvasContext = this.canvas.getContext('2d');
+      this.canvasContext.translate(0.5, 0.5)
       this._fillCanvasWithWhite();
     }
   }
@@ -119,8 +120,8 @@ class PureImagePrinter {
     this.italic(false);
   }
 
-  invert() {
-    // will be implemented later
+  invert(enabled) {
+    CanvasTxt.invert = enabled
   }
 
   setFontSize(fontSize) {
