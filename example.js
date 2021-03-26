@@ -4,7 +4,7 @@ const path = require('path');
 
 (async () => {
   async function printWithInstance(instanceName) {
-    const pureImagePrinter = new PureImagePrinter(500, 500);
+    const pureImagePrinter = new PureImagePrinter(500);
     console.time(instanceName);
     await pureImagePrinter.alignCenter();
     await pureImagePrinter.printImage(path.resolve(`${__dirname}/logo.png`));
@@ -100,13 +100,13 @@ const path = require('path');
   }
 
   setTimeout(() => printWithInstance('1'), 1000);
-  // setTimeout(() => printWithInstance('2'), 2000);
-  // setTimeout(() => printWithInstance('3'), 3000);
-  // setTimeout(() => printWithInstance('4'), 4000);
-  // setTimeout(() => printWithInstance('5'), 5000);
-  // setTimeout(() => printWithInstance('6'), 6000);
-  // setTimeout(() => printWithInstance('7'), 7000);
-  // setTimeout(() => printWithInstance('8'), 8000);
+  setTimeout(() => printWithInstance('2'), 2000);
+  setTimeout(() => printWithInstance('3'), 3000);
+  setTimeout(() => printWithInstance('4'), 4000);
+  setTimeout(() => printWithInstance('5'), 5000);
+  setTimeout(() => printWithInstance('6'), 6000);
+  setTimeout(() => printWithInstance('7'), 7000);
+  setTimeout(() => printWithInstance('8'), 8000);
 })()
 
 function showMemUsage() {

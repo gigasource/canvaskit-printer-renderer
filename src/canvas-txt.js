@@ -12,7 +12,6 @@ const canvasTxt = {
   font: 'Arial',
   lineHeight: null,
   justify: false,
-  invert: false,
   /**
    *
    * @param {CanvasRenderingContext2D} ctx
@@ -21,8 +20,9 @@ const canvasTxt = {
    * @param {number} y
    * @param {number} width
    * @param {number} height
+   * @param {boolean} invert
    */
-  drawText: function(ctx, mytext, x, y, width, height) {
+  drawText: function(ctx, mytext, x, y, width, height, invert) {
     // Parse all to integers
     ;[x, y, width, height] = [x, y, width, height].map(el => parseInt(el))
 
@@ -146,8 +146,8 @@ const canvasTxt = {
     }
     //print all lines of text
 
-    const backgroundColor = this.invert ? "black" : "white"
-    const textColor = this.invert ? "white" : "black"
+    const backgroundColor = invert ? "black" : "white"
+    const textColor = invert ? "white" : "black"
     textarray.forEach(txtline => {
       txtline = txtline.trim()
       if (txtline && backgroundColor === 'black') {

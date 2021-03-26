@@ -40,6 +40,7 @@ function applyWorkerPool(obj, keys) {
   obj.indivisibleCommands = [];
   obj.commandIndex = 0;
 
+  let invert = false
   keys.forEach(key => {
     if (key.startsWith('_') || typeof obj[key] !== 'function' || key === 'constructor') return;
 
@@ -47,9 +48,12 @@ function applyWorkerPool(obj, keys) {
       apply(target, thisArg, argArray) {
         return new Promise((async (resolve) => {
           if (DIVISIBLE_FUNCTIONS.includes(key)) {
-            obj.divisibleCommands.push({fnName: key, argArray, commandIndex: obj.commandIndex++});
+            if (key === 'invert') {
+              invert = argArray[0]
+            }
+            obj.divisibleCommands.push({fnName: key, argArray, commandIndex: obj.commandIndex++, invert});
           } else if (INDIVISIBLE_FUNCTIONS.includes(key)) {
-            obj.indivisibleCommands.push({fnName: key, argArray, commandIndex: obj.commandIndex++});
+            obj.indivisibleCommands.push({fnName: key, argArray, commandIndex: obj.commandIndex++, invert});
           } else if (key === 'print' || key === 'printToFile') {
             const buffers = await renderBuffers(obj);
 
@@ -94,17 +98,21 @@ async function renderBuffers({divisibleCommands, indivisibleCommands}) {
   const commandsPerWorker = COMMANDS_PER_WORKER;
   let buffers = [];
 
+  let currentInvert = false
   let sliceIndex = 0;
   while (sliceIndex < divisibleCommands.length) {
     const slicedCommands = divisibleCommands.slice(sliceIndex, sliceIndex + commandsPerWorker);
-
+    for(const command of slicedCommands) {
+      if (command.fnName === 'invert') {
+        currentInvert = command.invert
+      }
+    }
     if (slicedCommands.length === 0) continue;
-
     const workerCommands = [...indivisibleCommands, ...slicedCommands]
       .filter(e => e.commandIndex <= slicedCommands[slicedCommands.length - 1].commandIndex)
       .sort((e1, e2) => e1.commandIndex - e2.commandIndex);
 
-    buffers.push(execPrintTasks(workerCommands));
+    buffers.push(execPrintTasks(workerCommands, currentInvert));
 
     sliceIndex += commandsPerWorker;
   }
@@ -112,9 +120,9 @@ async function renderBuffers({divisibleCommands, indivisibleCommands}) {
   return Promise.all(buffers);
 }
 
-function execPrintTasks(printTasks) {
+function execPrintTasks(printTasks, currentInvert) {
   return new Promise((resolve, reject) => {
-    workerPool.exec('execPrintTasks', [printTasks])
+    workerPool.exec('execPrintTasks', [printTasks, currentInvert])
       .then(res => resolve(res))
       .catch(err => reject(err));
   });

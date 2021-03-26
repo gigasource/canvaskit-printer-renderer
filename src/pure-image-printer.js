@@ -121,7 +121,7 @@ class PureImagePrinter {
   }
 
   invert(enabled) {
-    CanvasTxt.invert = enabled
+    this.invertColor = enabled
   }
 
   setFontSize(fontSize) {
@@ -367,7 +367,7 @@ class PureImagePrinter {
     CanvasTxt.font = fontFamily;
     CanvasTxt.fontSize = this.fontSize;
     this.canvasContext.fillStyle = "black";
-    const {height, width} = CanvasTxt.drawText(this.canvasContext, text, x, y, layoutWidth, this.fontSize);
+    const {height, width} = CanvasTxt.drawText(this.canvasContext, text, x, y, layoutWidth, this.fontSize, this.invertColor);
 
     return {height, width};
   }
