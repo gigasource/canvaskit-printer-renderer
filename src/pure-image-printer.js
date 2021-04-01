@@ -152,12 +152,14 @@ class PureImagePrinter {
     // this variable is for ensuring total paragraph width doesn't become larger than canvas width
     let totalParagraphWidthExtension = 0;
 
+    const originalBold = this.fontBold
     const heights = [];
 
     for (let i = 0; i < columns.length; i++) {
       const column = columns[i];
 
-      let {text, align, width} = column;
+      let {text, align, width, bold} = column;
+      this.bold(bold || false)
 
       if (width < 0) width = 0;
       else if (width > 1) width = 1.0;
@@ -184,11 +186,13 @@ class PureImagePrinter {
 
       this.textAlign = currentTextAlign;
       heights.push(paragraphHeight);
+      this.bold(false)
     }
 
     const maxHeight = heights.sort((e1, e2) => e2 - e1)[0];
     this._increasePrintY(maxHeight);
     this.currentPrintX = currentPrintX;
+    this.bold(originalBold)
   }
 
   leftRight(leftText, rightText) {

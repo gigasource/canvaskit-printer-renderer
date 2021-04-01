@@ -92,6 +92,24 @@ const path = require('path');
     await pureImagePrinter.println('Vielen Dank fur Ihren Besuch');
     await pureImagePrinter.invert(false)
 
+    await pureImagePrinter.bold(true)
+    await pureImagePrinter.tableCustom([
+      { text: 'one', width: 0.3, bold: false, align: 'LEFT'},
+      { text: 'two', width: 0.3, bold: true, align: 'CENTER'},
+      { text: 'three', width: 0.4, bold: false, align: 'RIGHT'},
+    ])
+    await pureImagePrinter.println('text should be bold')
+
+    await pureImagePrinter.bold(false)
+    await pureImagePrinter.tableCustom([
+      { text: 'one', width: 0.3, bold: false, align: 'LEFT'},
+      { text: 'two', width: 0.3, bold: true, align: 'CENTER'},
+      { text: 'three', width: 0.4, bold: false, align: 'RIGHT'},
+    ])
+    await pureImagePrinter.println('text should be normal')
+
+    await pureImagePrinter.newLine()
+
     await pureImagePrinter.printToFile(path.resolve(`${__dirname}/example${instanceName}.png`)).then(async () => {
       console.timeEnd(instanceName);
       console.log('Printed');
