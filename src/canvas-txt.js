@@ -149,7 +149,7 @@ const canvasTxt = {
     const backgroundColor = invert ? "black" : "white"
     const textColor = invert ? "white" : "black"
     textarray.forEach(txtline => {
-      txtline = txtline.trim()
+      // txtline = txtline.trim()
       if (txtline && backgroundColor === 'black') {
         const estimateWidth = ctx.measureText(txtline).width
         ctx.fillStyle = backgroundColor
