@@ -197,8 +197,8 @@ class PureImagePrinter {
 
   leftRight(leftText, rightText) {
     this.tableCustom([
-      {text: leftText, align: 'LEFT', width: 0.5},
-      {text: rightText, align: 'RIGHT', width: 0.5},
+      {text: leftText, align: 'LEFT', width: 0.5, bold: this.fontBold},
+      {text: rightText, align: 'RIGHT', width: 0.5, bold: this.fontBold},
     ])
   }
 
@@ -279,7 +279,7 @@ class PureImagePrinter {
         cb();
       }
       writeStream.on('finish', () => {
-        this._printImage(qrBinData).then(resolve);
+        this._printImage(qrBinData, 'buffer').then(resolve);
       });
 
       QRCode.toFileStream(writeStream, text);
@@ -305,30 +305,33 @@ class PureImagePrinter {
     });
 
     const barcodeImageBuffer = await this._canvasToPngBuffer(canvas);
-    await this._printImage(barcodeImageBuffer);
+    await this._printImage(barcodeImageBuffer, 'buffer');
     canvas.data = null;
     canvas = null;
   }
 
-  printImage(imageInput) {
-    return this._printImage(imageInput);
+  printImage(imageInput, inputType) {
+    return this._printImage(imageInput, inputType);
   }
 
-  async _printImage(imageInput) {
+  async _printImage(imageInput, inputType = 'path') {
     let imageX = this.currentPrintX;
     let imageData;
-
-    if (typeof imageInput === 'string') {
-      imageData = await PureImage.decodePNGFromStream(fs.createReadStream(imageInput));
-    } else if (imageInput instanceof Buffer) {
+    if (inputType === 'base64') {
+      imageInput = Buffer.from(imageInput, 'base64')
+      inputType = 'buffer'
+    }
+    if (inputType === 'path') {
+      const fStream = fs.createReadStream(imageInput)
+      imageData = await PureImage.decodePNGFromStream(fStream)
+    }
+    if (inputType === 'buffer') {
       const imageReadStream = new Readable();
       imageReadStream.push(imageInput);
       imageReadStream.push(null);
-      imageData = await PureImage.decodePNGFromStream(imageReadStream);
+      imageData = await PureImage.decodePNGFromStream(imageReadStream)
     }
-
-    const {width: imgWidth, height: imgHeight} = imageData;
-
+    const {width: imgWidth, height: imgHeight} = imageData
     switch (this.textAlign) {
       case 'left': {
         imageX = this.currentPrintX;
@@ -343,12 +346,10 @@ class PureImagePrinter {
         break
       }
     }
-
     this.canvasContext.drawImage(imageData,
       0, 0, imgWidth, imgHeight,                      // source dimensions
       imageX, this.currentPrintY, imgWidth, imgHeight // destination dimensions
     );
-
     this._increasePrintY(imgHeight);
   }
 
