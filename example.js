@@ -114,6 +114,14 @@ const path = require('path');
 
     await pureImagePrinter.newLine()
 
+    //test font
+    await pureImagePrinter.println('Nguyễn Ngọc Dưỡng $€')
+    await pureImagePrinter.bold(true)
+    await pureImagePrinter.println('Nguyễn Ngọc Dưỡng $€')
+    await pureImagePrinter.italic(true)
+    await pureImagePrinter.bold(false)
+    await pureImagePrinter.println('Nguyễn Ngọc Dưỡng $€')
+
     await pureImagePrinter.printToFile(path.resolve(`${__dirname}/example${instanceName}.png`)).then(async () => {
       console.timeEnd(instanceName);
       console.log('Printed');
