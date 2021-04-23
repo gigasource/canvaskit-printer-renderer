@@ -137,11 +137,18 @@ class PureImagePrinter {
     this.fontSize = currentFontSize
   }
 
+  marginTop(x) { //x(cm)
+    const ratio = Math.floor(96 / 2.54)
+    for(let i = 0 ; i < x; i++) {
+      this.newLine(ratio)
+    }
+  }
+
   drawLine() {
     this._increasePrintY(DEFAULT_FONT_SIZE);
     const y = this.currentPrintY - DEFAULT_FONT_SIZE / 2;
 
-    this.canvasContext.fillStyle = "black";
+    this.canvasContext.fillStyle = 'black';
     this.canvasContext.drawLine({start: {x: 0, y}, end: {x: this.originalCanvasWidth, y}});
   }
 
@@ -371,7 +378,7 @@ class PureImagePrinter {
     CanvasTxt.align = this.textAlign;
     CanvasTxt.font = fontFamily;
     CanvasTxt.fontSize = this.fontSize;
-    this.canvasContext.fillStyle = "black";
+    this.canvasContext.fillStyle = 'black';
     const {height, width} = CanvasTxt.drawText(this.canvasContext, text, x, y, layoutWidth, this.fontSize, this.invertColor);
 
     return {height, width};
