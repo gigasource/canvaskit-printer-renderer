@@ -317,11 +317,11 @@ class PureImagePrinter {
     canvas = null;
   }
 
-  printImage(imageInput, inputType) {
-    return this._printImage(imageInput, inputType);
+  printImage(imageInput, inputType, ratio) {
+    return this._printImage(imageInput, inputType, ratio);
   }
 
-  async _printImage(imageInput, inputType = 'path') {
+  async _printImage(imageInput, inputType = 'path', ratio = 1) {
     let imageX = this.currentPrintX;
     let imageData;
     if (inputType === 'base64') {
@@ -339,25 +339,27 @@ class PureImagePrinter {
       imageData = await PureImage.decodePNGFromStream(imageReadStream)
     }
     const {width: imgWidth, height: imgHeight} = imageData
+    const scaledImgHeight = imgHeight / (imgWidth / 560) * ratio
+    const scaledImgWidth = imgWidth / (imgWidth / 560) * ratio
     switch (this.textAlign) {
       case 'left': {
         imageX = this.currentPrintX;
         break;
       }
       case 'right': {
-        imageX = this.currentPrintX + this.printWidth - imgWidth;
+        imageX = this.currentPrintX + this.printWidth - scaledImgWidth;
         break;
       }
       case 'center': {
-        imageX = this.originalCanvasWidth / 2 - imgWidth / 2;
+        imageX = this.originalCanvasWidth / 2 - scaledImgWidth / 2;
         break
       }
     }
     this.canvasContext.drawImage(imageData,
       0, 0, imgWidth, imgHeight,                      // source dimensions
-      imageX, this.currentPrintY, imgWidth, imgHeight // destination dimensions
+      imageX, this.currentPrintY, scaledImgWidth, scaledImgHeight  // destination dimensions
     );
-    this._increasePrintY(imgHeight);
+    this._increasePrintY(scaledImgHeight);
   }
 
   _drawParagraph(text, x, y, layoutWidth) {

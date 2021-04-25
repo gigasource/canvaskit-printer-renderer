@@ -3,7 +3,7 @@ const PureImagePrinter = require('../pure-image-printer');
 let printer;
 
 async function execPrintTasks(printTasks, currentInvert) {
-  if (!printer) printer = new PureImagePrinter(560, 250, {noResizing: true});
+  if (!printer) printer = new PureImagePrinter(560);
   printer.invert(currentInvert)
   if (printer.currentPrintY > 0) printer._reset();
 
