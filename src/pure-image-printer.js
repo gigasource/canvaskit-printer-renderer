@@ -203,9 +203,10 @@ class PureImagePrinter {
   }
 
   leftRight(leftText, rightText) {
+    const total = leftText.length + rightText.length
     this.tableCustom([
-      {text: leftText, align: 'LEFT', width: 0.5, bold: this.fontBold},
-      {text: rightText, align: 'RIGHT', width: 0.5, bold: this.fontBold},
+      {text: leftText, align: 'LEFT', width: leftText.length / total, bold: this.fontBold},
+      {text: rightText, align: 'RIGHT', width: rightText.length / total, bold: this.fontBold},
     ])
   }
 

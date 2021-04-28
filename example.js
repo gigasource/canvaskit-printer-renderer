@@ -123,7 +123,9 @@ const path = require('path');
     await pureImagePrinter.println('Nguyễn Ngọc Dưỡng $€')
     await pureImagePrinter.italic(true)
     await pureImagePrinter.bold(false)
-    await pureImagePrinter.println('Nguyễn Ngọc Dưỡng $€')
+    await pureImagePrinter.println('Nguyễn Ngọc Dưỡng $€. Phố Duy Tân')
+
+    await pureImagePrinter.leftRight('duongduongduongduongduongduongduongduongduongduongduongduongduongduongduongduong', 'nguyennguyennguyen')
 
     // await pureImagePrinter.setFontSize(24)
     await pureImagePrinter.println('duong nguyen')
