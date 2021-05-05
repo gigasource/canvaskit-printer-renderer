@@ -306,12 +306,10 @@ class PureImagePrinter {
   async printBarcode(text, opts = {}) {
     if (!JsBarcode) JsBarcode = require('jsbarcode');
 
-    const {height = 80, width = 3.5, displayValue = false} = opts;
-
-    let canvas = PureImage.make(this.printWidth, height + 10, {});
-
+    let {height = 80, width = 3.5, displayValue = false} = opts;
+    height = Math.round(height * this.ratio)
+    let canvas = PureImage.make(this.printWidth, height * 2 + 50, {});
     this._fillCanvasWithWhite(canvas);
-
     JsBarcode(canvas, text, {
       height,
       width,
