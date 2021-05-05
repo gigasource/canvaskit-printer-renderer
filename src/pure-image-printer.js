@@ -44,6 +44,14 @@ Object.keys(fontInfo).forEach(fontType => {
 });
 
 class PureImagePrinter {
+
+  getDefaultFontSize() {
+    return Math.round(this.ratio * DEFAULT_FONT_SIZE)
+  }
+
+  getDefaultNewLineFontSize() {
+    return Math.round(this.ratio * DEFAULT_NEW_LINE_FONT_SIZE)
+  }
   constructor(width, height, opts = {}) {
     if (height && typeof height === 'object') opts = height;
 
@@ -56,6 +64,7 @@ class PureImagePrinter {
 
       this.originalCanvasWidth = !isNaN(width) ? width : DEFAULT_CANVAS_WIDTH;
       this.originalCanvasHeight = !isNaN(height) ? height : DEFAULT_CANVAS_HEIGHT;
+      this.ratio = this.originalCanvasWidth / DEFAULT_CANVAS_WIDTH
       this.noResizing = noResizing;
       this.invert(false)
       this.paddingHorizontal = 0;
@@ -66,8 +75,8 @@ class PureImagePrinter {
       this.currentPrintY = this.paddingVertical;
 
       this.textAlign = 'left';
-      this.fontSize = DEFAULT_FONT_SIZE;
-      this.newLineFontSize = DEFAULT_NEW_LINE_FONT_SIZE;
+      this.fontSize = this.getDefaultFontSize();
+      this.newLineFontSize = this.getDefaultNewLineFontSize();
       this.fontBold = false;
       this.fontItalic = false;
 
@@ -91,18 +100,18 @@ class PureImagePrinter {
   }
 
   setTextDoubleHeight() {
-    this.fontSize = Math.round(DEFAULT_FONT_SIZE * 2);
-    this.newLineFontSize = DEFAULT_NEW_LINE_FONT_SIZE * 2;
+    this.fontSize = Math.round(this.getDefaultFontSize() * 2);
+    this.newLineFontSize = Math.round(this.getDefaultNewLineFontSize() * 2);
   }
 
   setTextDoubleWidth() {
-    this.fontSize = DEFAULT_FONT_SIZE;
-    this.newLineFontSize = DEFAULT_NEW_LINE_FONT_SIZE;
+    this.fontSize = this.getDefaultFontSize();
+    this.newLineFontSize = this.getDefaultNewLineFontSize();
   }
 
   setTextQuadArea() {
-    this.fontSize = Math.round(DEFAULT_FONT_SIZE * 2);
-    this.newLineFontSize = DEFAULT_NEW_LINE_FONT_SIZE * 2;
+    this.fontSize = Math.round(this.getDefaultFontSize() * 2);
+    this.newLineFontSize = Math.round(this.getDefaultNewLineFontSize() * 2);
   }
 
   bold(isBold) {
@@ -114,8 +123,8 @@ class PureImagePrinter {
   }
 
   setTextNormal() {
-    this.fontSize = DEFAULT_FONT_SIZE;
-    this.newLineFontSize = DEFAULT_NEW_LINE_FONT_SIZE;
+    this.fontSize = this.getDefaultFontSize();
+    this.newLineFontSize = this.getDefaultNewLineFontSize();
     this.bold(false);
     this.italic(false);
   }
@@ -145,8 +154,8 @@ class PureImagePrinter {
   }
 
   drawLine() {
-    this._increasePrintY(DEFAULT_FONT_SIZE);
-    const y = this.currentPrintY - DEFAULT_FONT_SIZE / 2;
+    this._increasePrintY(this.getDefaultFontSize());
+    const y = this.currentPrintY - this.getDefaultFontSize() / 2;
 
     this.canvasContext.fillStyle = 'black';
     this.canvasContext.drawLine({start: {x: 0, y}, end: {x: this.originalCanvasWidth, y}});
@@ -260,8 +269,8 @@ class PureImagePrinter {
 
   _reset() {
     // set text normal
-    this.fontSize = DEFAULT_FONT_SIZE;
-    this.newLineFontSize = DEFAULT_NEW_LINE_FONT_SIZE;
+    this.fontSize = this.getDefaultFontSize();
+    this.newLineFontSize = this.getDefaultNewLineFontSize();
     this.bold(false);
     this.italic(false);
 
@@ -340,8 +349,8 @@ class PureImagePrinter {
       imageData = await PureImage.decodePNGFromStream(imageReadStream)
     }
     const {width: imgWidth, height: imgHeight} = imageData
-    const scaledImgHeight = imgHeight / (imgWidth / 560) * ratio
-    const scaledImgWidth = imgWidth / (imgWidth / 560) * ratio
+    const scaledImgHeight = imgHeight / (imgWidth / this.originalCanvasWidth) * ratio
+    const scaledImgWidth = imgWidth / (imgWidth / this.originalCanvasWidth) * ratio
     switch (this.textAlign) {
       case 'left': {
         imageX = this.currentPrintX;

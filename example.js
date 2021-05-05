@@ -4,7 +4,7 @@ const path = require('path');
 
 (async () => {
   async function printWithInstance(instanceName) {
-    const pureImagePrinter = new PureImagePrinter(560);
+    const pureImagePrinter = new PureImagePrinter(400);
     console.time(instanceName);
     await pureImagePrinter.marginTop(4)
     await pureImagePrinter.drawLine()
@@ -137,7 +137,7 @@ const path = require('path');
     });
   }
 
-  setTimeout(() => printWithInstance('2'), 1000);
+  setTimeout(() => printWithInstance('1'), 1000);
   // setTimeout(() => printWithInstance('2'), 2000);
   // setTimeout(() => printWithInstance('3'), 3000);
   // setTimeout(() => printWithInstance('4'), 4000);
