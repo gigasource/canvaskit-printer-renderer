@@ -94,7 +94,7 @@ function applyWorkerPool(obj, keys) {
   });
 }
 
-async function renderBuffers({printWidth, divisibleCommands, indivisibleCommands}) {
+async function renderBuffers({printWidth, divisibleCommands, indivisibleCommands, opts}) {
   const commandsPerWorker = COMMANDS_PER_WORKER;
   let buffers = [];
 
@@ -112,7 +112,7 @@ async function renderBuffers({printWidth, divisibleCommands, indivisibleCommands
       .filter(e => e.commandIndex <= slicedCommands[slicedCommands.length - 1].commandIndex)
       .sort((e1, e2) => e1.commandIndex - e2.commandIndex);
 
-    buffers.push(execPrintTasks(workerCommands, currentInvert, printWidth));
+    buffers.push(execPrintTasks(workerCommands, currentInvert, printWidth, opts));
 
     sliceIndex += commandsPerWorker;
   }
@@ -120,9 +120,9 @@ async function renderBuffers({printWidth, divisibleCommands, indivisibleCommands
   return Promise.all(buffers);
 }
 
-function execPrintTasks(printTasks, currentInvert, printWidth) {
+function execPrintTasks(printTasks, currentInvert, printWidth, opts = {}) {
   return new Promise((resolve, reject) => {
-    workerPool.exec('execPrintTasks', [printTasks, currentInvert, printWidth])
+    workerPool.exec('execPrintTasks', [printTasks, currentInvert, printWidth, opts])
       .then(res => resolve(res))
       .catch(err => reject(err));
   });

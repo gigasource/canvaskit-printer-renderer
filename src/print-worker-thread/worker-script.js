@@ -1,8 +1,8 @@
 const wkPool = require('workerpool');
 const PureImagePrinter = require('../pure-image-printer');
 
-async function execPrintTasks(printTasks, currentInvert, printWidth) {
-  const printer = new PureImagePrinter(printWidth || 560)
+async function execPrintTasks(printTasks, currentInvert, printWidth, opts) {
+  const printer = new PureImagePrinter(printWidth || 560, opts)
   printer.invert(currentInvert)
   if (printer.currentPrintY > 0) printer._reset();
 

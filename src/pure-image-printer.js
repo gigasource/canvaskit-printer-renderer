@@ -55,8 +55,9 @@ class PureImagePrinter {
   constructor(width, height, opts = {}) {
     if (height && typeof height === 'object') opts = height;
 
-    const {printFunctions = {}, createCanvas = true, noResizing} = opts;
+    const {printFunctions = {}, createCanvas = true, noResizing, autoAdjustFontsize = false} = opts;
 
+    this.opts = opts
     if (createCanvas) {
       this._externalPrintPng = printFunctions.printPng;
       this._externalPrint = printFunctions.print;
@@ -64,7 +65,7 @@ class PureImagePrinter {
 
       this.originalCanvasWidth = !isNaN(width) ? width : DEFAULT_CANVAS_WIDTH;
       this.originalCanvasHeight = !isNaN(height) ? height : DEFAULT_CANVAS_HEIGHT;
-      this.ratio = this.originalCanvasWidth / DEFAULT_CANVAS_WIDTH
+      this.ratio = autoAdjustFontsize ? this.originalCanvasWidth / DEFAULT_CANVAS_WIDTH : 1
       this.noResizing = noResizing;
       this.invert(false)
       this.paddingHorizontal = 0;
@@ -134,7 +135,7 @@ class PureImagePrinter {
   }
 
   setFontSize(fontSize) {
-    this.fontSize = fontSize;
+    this.fontSize = fontSize * this.ratio;
   }
 
   newLine(customNewLineFontSize) {
