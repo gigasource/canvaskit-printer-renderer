@@ -54,29 +54,42 @@ const path = require('path');
       {text: '12,80', align: 'RIGHT', width: 0.3},
     ]);
     await pureImagePrinter.drawLine();
-    await pureImagePrinter.setFontSize(14);
-    const metaData = [{align: 'LEFT', borderBottom: true}, {align: 'LEFT'}, {align: 'LEFT'}, {align: 'RIGHT', priority: 'HIGH'}]
+    await pureImagePrinter.setFontSize(25);
+    const colMetaData = [{align: 'LEFT', padding: 0.03}, {align: 'RIGHT', priority: 'HIGH', padding: 0.03}, {align: 'RIGHT', priority: 'HIGH', padding: 0.03}, {align: 'RIGHT', priority: 'HIGH'}]
+    const rowMetaData = [{borderBottom: true}]
     const data = [
       [
-        {text: 'Qty', bold: true},
-        {text: 'Bezeichnung', bold: true},
-        {text: 'EP', align: 'CENTER', bold: true},
-        {text: 'Preis', bold: true}
+        {text: 'Artikel', bold: true},
+        {text: 'Menge', bold: true},
+        {text: 'Preis', bold: true},
+        {text: 'Brutto',  bold: true}
       ],
       [
+        {text: 'MEAT DELI file uc ga 450g 89123123123'},
         {text: '1'},
-        {text: 'Whiskey Sour'},
-        {text: ''},
-        {text: '12,80'},
+        {text: '40.00'},
+        {text: '40.00'},
       ],
       [
+        {text: 'Tequila'},
         {text: '1'},
-        {text: 'Pisco Sour'},
-        {text: ''},
-        {text: '12,80'}
+        {text: '43,000'},
+        {text: '43,000'}
+      ],
+      [
+        {text: 'Baijiu'},
+        {text: '1'},
+        {text: '120,000'},
+        {text: '120,00'}
+      ],
+      [
+        {text: 'Gin'},
+        {text: '1'},
+        {text: '1,000,000'},
+        {text: '1,000,000'}
       ],
     ]
-    await pureImagePrinter.advancedTableCustom({metaData, data}, true)
+    await pureImagePrinter.advancedTableCustom({metaData: {rowMetaData, colMetaData}, data}, true)
 
     await pureImagePrinter.setTextQuadArea();
     await pureImagePrinter.bold(true);
