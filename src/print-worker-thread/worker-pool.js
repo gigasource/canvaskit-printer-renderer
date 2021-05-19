@@ -13,6 +13,7 @@ const DIVISIBLE_FUNCTIONS = [
   'newLine',
   'drawLine',
   'tableCustom',
+  'advancedTableCustom',
   'leftRight',
   'println',
   'printQrCode',

@@ -52,6 +52,7 @@ class PureImagePrinter {
   getDefaultNewLineFontSize() {
     return Math.round(this.ratio * DEFAULT_NEW_LINE_FONT_SIZE)
   }
+
   constructor(width, height, opts = {}) {
     if (height && typeof height === 'object') opts = height;
 
@@ -149,7 +150,7 @@ class PureImagePrinter {
 
   marginTop(x) { //x(cm)
     const ratio = Math.floor(96 / 2.54)
-    for(let i = 0 ; i < x; i++) {
+    for (let i = 0; i < x; i++) {
       this.newLine(ratio)
     }
   }
@@ -162,7 +163,111 @@ class PureImagePrinter {
     this.canvasContext.drawLine({start: {x: 0, y}, end: {x: this.originalCanvasWidth, y}});
   }
 
-  tableCustom(columns) {
+  advancedTableCustom(tableData, autoAdjustWidth) {
+    //table header => 1 row
+    const {metaData, data} = tableData
+
+    if (autoAdjustWidth) {
+      for (let i = 0; i < data.length; i++) {
+        for (let j = 0; j < data[i].length; j++) {
+          data[i][j].text = data[i][j].text.trim()
+        }
+      }
+      let totalFixed = 0
+      let cntFixed = 0
+      const lowPriorityEstimates = []
+      let highPriorityMaxWidths = []
+      for (let colIdx = 0; colIdx < metaData.length; colIdx++) {
+        const {priority} = metaData[colIdx]
+        if (priority === 'HIGH') {
+          const maxLen = Math.max.apply(Math, data.map(row => this._measureText(row[colIdx].text, row[colIdx].bold).width)) //todo: font
+          highPriorityMaxWidths.push(maxLen / this.printWidth + 0.01)
+          totalFixed += maxLen / this.printWidth + 0.01 //space
+          // cntFixed ++
+        } else {
+          let row = []
+          for (let i = 0; i < 20; i++) {
+            let tmp = []
+            for (let rowIdx = 0; rowIdx < data.length; rowIdx++) {
+              tmp.push(this._estimateLine(data[rowIdx][colIdx].text, false, this.printWidth * (i + 1) * 0.05))
+            }
+            let v = tmp.reduce((a, b) => a + b, 0)
+            for (let rowIdx = 0; rowIdx < data.length; rowIdx++) {
+              for (let _rowIdx = 0; _rowIdx < data.length; _rowIdx++) {
+                v += Math.abs(tmp[rowIdx] - tmp[_rowIdx]) / 2
+              }
+            }
+            row.push(v)
+          }
+          lowPriorityEstimates.push(row)
+        }
+      }
+
+      let optimizedValue = 10000000
+      let optimizedWidths
+
+      function getValue(data, widths) {
+        let res = 0
+        for (let i = 0; i < data.length; i++) {
+          res += data[i][widths[i]]
+        }
+        return res
+      }
+
+      function getOptimizedWidths(data, idx, remain, widths) {
+        if (idx === data.length) {
+          const value = getValue(data, widths)
+          // console.log(widths, value)
+          if (value < optimizedValue) {
+            optimizedValue = value
+            optimizedWidths = [...widths]
+          }
+        } else {
+          if (idx === data.length - 1) {
+            if (remain < 0.06) return
+            widths.push(Math.floor((remain - 0.06) / 0.05))
+            getOptimizedWidths(data, idx + 1, 0, widths)
+            widths.pop()
+          } else {
+            for (let i = 0; i < (remain - 0.06) / 0.05 + 1; i++) {
+              widths.push(i)
+              getOptimizedWidths(data, idx + 1, remain - i * 0.05 - 0.06, widths)
+              widths.pop()
+            }
+          }
+        }
+      }
+
+      getOptimizedWidths(lowPriorityEstimates, 0, 1 - totalFixed, [])
+      let cur = 0
+      let cur1 = 0
+      let total = 0
+      for (let j = 0; j < metaData.length; j++) {
+        const {priority} = metaData[j]
+        if (priority !== 'HIGH') {
+          metaData[j].width = Math.round((optimizedWidths[cur++] * 0.05 + 0.06) * 100) / 100
+        } else {
+          metaData[j].width = highPriorityMaxWidths[cur1++]
+        }
+        total += metaData[j].width
+      }
+      metaData[metaData.length - 1].width += 1 - total
+      // console.log(optimizedValue, optimizedWidths, lowPriorityEstimates)
+    }
+
+    for (let i = 0; i < data.length; i++) {
+      this.tableCustom(data[i].map((dt, j) => ({...metaData[j], ...dt})))
+      const {borderBottom} = metaData[i]
+      if (borderBottom) {
+        this.drawLine()
+      }
+    }
+  }
+
+  _callOptimizedWidth(columns) {
+  }
+
+  tableCustom(columns, autoAdjustWidth) { //autoAdjustWidth => 3 cols only //todo: find better solution
     const currentPrintX = this.currentPrintX;
 
     // for fixing a bug of canvas-txt relating to paragraph width < single character width, causing infinite while loop
@@ -189,6 +294,7 @@ class PureImagePrinter {
         totalParagraphWidthExtension = 0;
       }
 
+      if (!align) align = 'LEFT'
       if (align.toUpperCase() === 'LEFT') this.textAlign = 'left';
       else if (align.toUpperCase() === 'RIGHT') this.textAlign = 'right';
       else if (align.toUpperCase() === 'CENTER') this.textAlign = 'center';
@@ -369,6 +475,29 @@ class PureImagePrinter {
       imageX, this.currentPrintY, scaledImgWidth, scaledImgHeight  // destination dimensions
     );
     this._increasePrintY(scaledImgHeight);
+  }
+
+  _estimateLine(text, bold, layoutWidth) {
+    if (typeof text !== 'string') text = text.toString();
+    let fontFamily;
+    if (bold) fontFamily = fontInfo.bold.fontFamily
+    else fontFamily = fontInfo.normal.fontFamily
+    CanvasTxt.font = fontFamily;
+    CanvasTxt.fontSize = this.fontSize;
+    return CanvasTxt.estimateLines(this.canvasContext, text, layoutWidth)
+  }
+
+  _measureText(text, bold) {
+    let fontFamily
+    if (bold) fontFamily = fontInfo.bold.fontFamily
+    else fontFamily = fontInfo.normal.fontFamily
+    const curFont = CanvasTxt.curFont
+    CanvasTxt.font = fontFamily
+    CanvasTxt.fontSize = this.fontSize;
+
+    const {width} = CanvasTxt.measureText(this.canvasContext, text);
+    CanvasTxt.font = curFont
+    return {width}
   }
 
   _drawParagraph(text, x, y, layoutWidth) {
