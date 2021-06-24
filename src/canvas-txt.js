@@ -22,6 +22,76 @@ const canvasTxt = {
    * @param {number} height
    * @param {boolean} invert
    */
+
+  measureText: function(ctx, text) {
+    const { fontStyle, fontVariant, fontWeight, fontSize, font } = this
+    const style = `${fontStyle} ${fontVariant} ${fontWeight} ${fontSize}px ${font}`
+    ctx.font = style.trim();
+    return ctx.measureText(text)
+  },
+  estimateLines: function(ctx, mytext, width) {
+    // Parse all to integers
+    const { fontStyle, fontVariant, fontWeight, fontSize, font } = this
+    const style = `${fontStyle} ${fontVariant} ${fontWeight} ${fontSize}px ${font}`
+    ctx.font = style.trim();
+    const firstCharacterWidth = ctx.measureText('M').width;
+    if (firstCharacterWidth >= width) {
+      return 10000
+    }
+    //added one-line only auto linebreak feature
+    let textarray = []
+    let temptextarray = mytext.split('\n')
+    const spaceWidth = this.justify ? ctx.measureText(SPACE).width : 0
+    temptextarray.forEach(txtt => {
+      let textwidth = ctx.measureText(txtt).width
+      if (textwidth <= width) {
+        textarray.push(txtt)
+      } else {
+        let temptext = txtt
+        let linelen = width
+        let textlen
+        let textpixlen
+        let texttoprint
+        textwidth = ctx.measureText(temptext).width
+        while (textwidth > linelen) {
+          textlen = 0
+          textpixlen = 0
+          texttoprint = ''
+          while (textpixlen < linelen) {
+            textlen++
+            texttoprint = temptext.substr(0, textlen)
+            textpixlen = ctx.measureText(temptext.substr(0, textlen)).width
+          }
+          // Remove last character that was out of the box
+          textlen--
+          texttoprint = texttoprint.substr(0, textlen)
+          //if statement ensures a new line only happens at a space, and not amidst a word
+          const backup = textlen
+          if (temptext.substr(textlen, 1) != ' ') {
+            while (temptext.substr(textlen, 1) != ' ' && textlen != 0) {
+              textlen--
+            }
+            if (textlen == 0) {
+              textlen = backup
+            }
+            texttoprint = temptext.substr(0, textlen)
+          }
+
+          texttoprint = this.justify
+            ? this.justifyLine(ctx, texttoprint, spaceWidth, SPACE, width)
+            : texttoprint
+
+          temptext = temptext.substr(textlen)
+          textwidth = ctx.measureText(temptext).width
+          textarray.push(texttoprint)
+        }
+        if (textwidth > 0) {
+          textarray.push(temptext)
+        }
+      }
+    })
+    return textarray.length
+  },
   drawText: function(ctx, mytext, x, y, width, height, invert) {
     // Parse all to integers
     ;[x, y, width, height] = [x, y, width, height].map(el => parseInt(el))
@@ -149,7 +219,7 @@ const canvasTxt = {
     const backgroundColor = invert ? "black" : "white"
     const textColor = invert ? "white" : "black"
     textarray.forEach(txtline => {
-      // txtline = txtline.trim()
+      txtline = txtline.trim()
       if (txtline && backgroundColor === 'black') {
         const estimateWidth = ctx.measureText(txtline).width
         ctx.fillStyle = backgroundColor

@@ -13,6 +13,7 @@ const DIVISIBLE_FUNCTIONS = [
   'newLine',
   'drawLine',
   'tableCustom',
+  'advancedTableCustom',
   'leftRight',
   'println',
   'printQrCode',
@@ -94,7 +95,7 @@ function applyWorkerPool(obj, keys) {
   });
 }
 
-async function renderBuffers({printWidth, divisibleCommands, indivisibleCommands, opts}) {
+async function renderBuffers({printWidth, divisibleCommands, indivisibleCommands, opts: {autoAdjustFontsize}}) {
   const commandsPerWorker = COMMANDS_PER_WORKER;
   let buffers = [];
 
@@ -112,7 +113,7 @@ async function renderBuffers({printWidth, divisibleCommands, indivisibleCommands
       .filter(e => e.commandIndex <= slicedCommands[slicedCommands.length - 1].commandIndex)
       .sort((e1, e2) => e1.commandIndex - e2.commandIndex);
 
-    buffers.push(execPrintTasks(workerCommands, currentInvert, printWidth, opts));
+    buffers.push(execPrintTasks(workerCommands, currentInvert, printWidth, {autoAdjustFontsize}));
 
     sliceIndex += commandsPerWorker;
   }

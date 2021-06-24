@@ -4,7 +4,7 @@ const path = require('path');
 
 (async () => {
   async function printWithInstance(instanceName) {
-    const pureImagePrinter = new PureImagePrinter(200 + instanceName * 40);
+    const pureImagePrinter = new PureImagePrinter(560);
     console.time(instanceName);
     await pureImagePrinter.marginTop(4)
     await pureImagePrinter.drawLine()
@@ -54,6 +54,42 @@ const path = require('path');
       {text: '12,80', align: 'RIGHT', width: 0.3},
     ]);
     await pureImagePrinter.drawLine();
+    await pureImagePrinter.setFontSize(25);
+    const colMetaData = [{align: 'LEFT', padding: 0.03}, {align: 'RIGHT', priority: 'HIGH', padding: 0.03}, {align: 'RIGHT', priority: 'HIGH', padding: 0.03}, {align: 'RIGHT', priority: 'HIGH'}]
+    const rowMetaData = [{borderBottom: true}]
+    const data = [
+      [
+        {text: 'Artikel', bold: true},
+        {text: 'Menge', bold: true},
+        {text: 'Preis', bold: true},
+        {text: 'Brutto',  bold: true}
+      ],
+      [
+        {text: 'MEAT DELI file uc ga 450g 89123123123'},
+        {text: '1'},
+        {text: '40.00'},
+        {text: '40.00'},
+      ],
+      [
+        {text: 'Tequila'},
+        {text: '1'},
+        {text: '43,000'},
+        {text: '43,000'}
+      ],
+      [
+        {text: 'Baijiu'},
+        {text: '1'},
+        {text: '120,000'},
+        {text: '120,00'}
+      ],
+      [
+        {text: 'Gin'},
+        {text: '1'},
+        {text: '1,000,000'},
+        {text: '1,000,000'}
+      ],
+    ]
+    await pureImagePrinter.advancedTableCustom({metaData: {rowMetaData, colMetaData}, data}, true)
 
     await pureImagePrinter.setTextQuadArea();
     await pureImagePrinter.bold(true);
@@ -137,14 +173,14 @@ const path = require('path');
     });
   }
 
-  // setTimeout(() => printWithInstance('2'), 1000);
+  setTimeout(() => printWithInstance('1'), 1000);
   // setTimeout(() => printWithInstance('2'), 2000);
   // setTimeout(() => printWithInstance('3'), 3000);
   // setTimeout(() => printWithInstance('4'), 4000);
-  setTimeout(() => printWithInstance('5'), 5000);
-  setTimeout(() => printWithInstance('6'), 6000);
-  setTimeout(() => printWithInstance('7'), 7000);
-  setTimeout(() => printWithInstance('8'), 8000);
+  // setTimeout(() => printWithInstance('5'), 5000);
+  // setTimeout(() => printWithInstance('6'), 6000);
+  // setTimeout(() => printWithInstance('7'), 7000);
+  // setTimeout(() => printWithInstance('8'), 8000);
 })()
 
 function showMemUsage() {
@@ -154,6 +190,7 @@ function showMemUsage() {
     return acc;
   }, {}));
 }
+
 //
 // setInterval(() => {
 //   showMemUsage();
