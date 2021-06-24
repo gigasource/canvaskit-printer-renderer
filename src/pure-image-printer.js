@@ -401,7 +401,7 @@ class PureImagePrinter {
     this._fillCanvasWithWhite();
   }
 
-  printQrCode(text) {
+  printQrCode(text, ratio) {
     if (!QRCode) QRCode = require('qrcode');
 
     if (typeof text !== 'string') text = text.toString();
@@ -415,7 +415,7 @@ class PureImagePrinter {
         cb();
       }
       writeStream.on('finish', () => {
-        this._printImage(qrBinData, 'buffer').then(resolve);
+        this._printImage(qrBinData, 'buffer', ratio).then(resolve);
       });
 
       QRCode.toFileStream(writeStream, text);

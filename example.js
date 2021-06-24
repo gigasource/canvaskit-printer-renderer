@@ -117,7 +117,7 @@ const path = require('path');
     await pureImagePrinter.newLine();
 
     await pureImagePrinter.alignCenter();
-    await pureImagePrinter.printQrCode('2D49DCE478188FFB84B4F7B0735DF925436DCB23B64D2365FC0A62AB4DBE0217');
+    await pureImagePrinter.printQrCode('2D49DCE478188FFB84B4F7B0735DF925436DCB23B64D2365FC0A62AB4DBE0217', 0.5);
     await pureImagePrinter.printBarcode('201005103450367', {
       height: 80, // default is 80
       width: 3.5, // width of each bar in barcode
