@@ -514,7 +514,7 @@ class PureImagePrinter {
 
   _drawParagraph(text, x, y, layoutWidth) {
     if (typeof text !== 'string') text = text.toString();
-
+    if (!text) return {height: 0, width: 0}
     let fontFamily;
 
     if (this.fontBold && this.fontItalic) {

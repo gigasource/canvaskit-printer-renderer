@@ -93,7 +93,7 @@ const path = require('path');
 
     await pureImagePrinter.setTextQuadArea();
     await pureImagePrinter.bold(true);
-    await pureImagePrinter.leftRight('Summe', '$ 25.60');
+    await pureImagePrinter.leftRight('Summe', '');
     await pureImagePrinter.drawLine();
 
     await pureImagePrinter.setFontSize(14);
