@@ -1,6 +1,6 @@
 {
   "name": "@gigasource/pureimage-printer-renderer",
-  "version": "0.0.39",
+  "version": "0.0.40",
   "description": "Use pureimage to render bill & report images for printers to print",
   "main": "index.js",
   "scripts": {
@@ -18,7 +18,7 @@
   },
   "homepage": "https://github.com/gigasource/canvaskit-printer-renderer#readme",
   "dependencies": {
-    "@gigasource/pureimage": "^0.0.3",
+    "@gigasource/pureimage": "^0.0.4",
     "jsbarcode": "3.11.3",
     "pngjs": "5.0.0",
     "qrcode": "1.4.4",

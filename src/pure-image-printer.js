@@ -553,7 +553,7 @@ class PureImagePrinter {
   }
 
   _fillCanvasWithWhite(canvas = this.canvas) {
-    canvas.data.fill(255);
+    //canvas.data.fill(255);
   }
 
   _shrinkCanvasHeight() {
