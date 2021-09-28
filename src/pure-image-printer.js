@@ -60,6 +60,7 @@ class PureImagePrinter {
 
     this.opts = opts
     if (createCanvas) {
+      this._externalPrintRaster = printFunctions.printRaster;
       this._externalPrintPng = printFunctions.printPng;
       this._externalPrint = printFunctions.print;
       CanvasTxt.vAlign = 'top';
@@ -374,7 +375,19 @@ class PureImagePrinter {
     await PureImage.encodePNGToStream(this.canvas, writeStream);
   }
 
-  async print() {
+  async print(target = 'png') {
+    if (target !== 'png') {
+      const {width, height} = this.canvas;
+      const buffer = this.canvas.data.slice(0, Math.floor(width * height /8));
+      if (typeof this._externalPrintRaster === 'function' && typeof this._externalPrint === 'function') {
+        await this._externalPrintRaster({data: buffer, width, height});
+        await this._externalPrint();
+      }
+
+      this._reset();
+      return;
+    }
+
     const pngBuffer = await this._canvasToPngBuffer(this.canvas, this.currentPrintY);
     const png = PNG.sync.read(pngBuffer);
 
