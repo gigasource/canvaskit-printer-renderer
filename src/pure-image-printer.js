@@ -56,13 +56,14 @@ class PureImagePrinter {
   constructor(width, height, opts = {}) {
     if (height && typeof height === 'object') opts = height;
 
-    const {printFunctions = {}, createCanvas = true, noResizing, autoAdjustFontsize = false} = opts;
+    const {printFunctions = {}, createCanvas = true, noResizing, autoAdjustFontsize = false, defaultPrintTarget} = opts;
 
     this.opts = opts
     if (createCanvas) {
       this._externalPrintRaster = printFunctions.printRaster;
       this._externalPrintPng = printFunctions.printPng;
       this._externalPrint = printFunctions.print;
+      this.defaultPrintTarget = defaultPrintTarget;
       CanvasTxt.vAlign = 'top';
 
       this.originalCanvasWidth = !isNaN(width) ? width : DEFAULT_CANVAS_WIDTH;
@@ -375,8 +376,8 @@ class PureImagePrinter {
     await PureImage.encodePNGToStream(this.canvas, writeStream);
   }
 
-  async print(target = 'png') {
-    if (target !== 'png') {
+  async print(target) {
+    if (this.defaultPrintTarget === 'raster' && target !== 'png' || target === 'raster') {
       const {width, height} = this.canvas;
       const buffer = this.canvas.data.slice(0, Math.floor(width * height /8));
       if (typeof this._externalPrintRaster === 'function' && typeof this._externalPrint === 'function') {
