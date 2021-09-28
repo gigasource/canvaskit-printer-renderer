@@ -34,6 +34,7 @@ class CanvaskitApi {
     // print functions from pos-restaurant, used for backward compatibility
     const {printFunctions = {}} = opts;
     this.externalPrintPng = printFunctions.printPng;
+    this.externalPrintPixels = printFunctions.printPixels;
     this.externalPrint = printFunctions.print;
 
     this.textAlign = Canvaskit.TextAlign.Left;
@@ -133,7 +134,7 @@ class CanvaskitApi {
     const currentPrintX = this.currentPrintX;
 
     const heights = columns.map(column => {
-      let {text, align, width} = column;
+      let {text, align = 'LEFT', width} = column;
 
       if (width < 0) width = 0;
       else if (width > 1) width = 1.0;
@@ -169,16 +170,18 @@ class CanvaskitApi {
     this.currentPrintY += paragraphHeight;
   }
 
-  async _getPrintPngBuffer() {
-    const img = this.surface.makeImageSnapshot();
+  _getPrintPngBuffer(target = 'png') {
+    if (target !== 'png') {
+      const pixels = this.surfaceCanvas.readPixels(0, 0, this.canvasWidth, this.currentPrintY);
+      return {data: pixels, width: this.canvasWidth, height: this.currentPrintY};
+    }
+
+    const img = this.surface.makeImageSnapshot(Canvaskit.XYWHRect(0, 0, this.canvasWidth, this.currentPrintY));
     const png = img.encodeToData();
 
     const pngBuffer = Buffer.from(Canvaskit.getSkDataBytes(png));
 
-    const jimpImg = await Jimp.read(pngBuffer);
-    jimpImg.crop(0, 0, this.canvasWidth, this.currentPrintY);
-
-    return jimpImg.getBufferAsync(Jimp.MIME_PNG);
+    return pngBuffer;
   }
 
   async printToFile(outputFilePath) {
@@ -187,12 +190,15 @@ class CanvaskitApi {
     fs.writeFileSync(path.resolve(outputFilePath), pngBuffer);
   }
 
-  async print() {
-    const pngBuffer = await this._getPrintPngBuffer();
-    const png = PNG.sync.read(pngBuffer);
+  async print(target = 'png') {
+    const imgBufer = this._getPrintPngBuffer(target);
+    //const png = this.surfaceCanvas.png;
 
     if (typeof this.externalPrintPng === 'function' && typeof this.externalPrint === 'function') {
-      this.externalPrintPng(png);
+      this.externalPrintPng(imgBufer);
+      await this.externalPrint();
+    } else if (typeof this.externalPrintPixels === 'function' && typeof this.externalPrint === 'function') {
+      this.externalPrintPixels(imgBufer);
       await this.externalPrint();
     }
   }
@@ -270,7 +276,7 @@ class CanvaskitApi {
     paint.delete();
   }
 
-  _drawParagraph(text, x, y, layoutWidth) {
+  _drawParagraph(text = '', x, y, layoutWidth) {
     if (typeof text !== 'string') text = text.toString();
 
     const fontMgr = Canvaskit.SkFontMgr.FromData(this.fontData);
