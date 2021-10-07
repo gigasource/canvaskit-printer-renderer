@@ -1,4 +1,4 @@
-const PureImagePrinter = require('./index');
+const PureImagePrinter = require('./src/pure-image-printer');
 const {base64Image} = require("./example-material");
 
 const path = require('path');

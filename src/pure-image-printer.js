@@ -559,7 +559,7 @@ class PureImagePrinter {
       const width = Math.floor(this.originalCanvasWidth);
       const height = Math.floor(CANVAS_HEIGHT_EXTENSION);
 
-      const bufferToAppend = Buffer.alloc(Math.ceil(width * height / 8), 255);
+      const bufferToAppend = Buffer.alloc(Math.ceil(width * height / 8), 0);
 
       this.canvas.data = Buffer.concat([this.canvas.data, bufferToAppend]);
     }
