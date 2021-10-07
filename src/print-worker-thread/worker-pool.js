@@ -58,11 +58,14 @@ function applyWorkerPool(obj, keys) {
           } else if (key === 'print' || key === 'printToFile') {
             const buffers = await renderBuffers(obj);
 
-            const canvasData = buffers.reduce((acc, {data, width, height}) => ({
-              finalBuffer: Buffer.concat([acc.finalBuffer, data]),
-              finalHeight: acc.finalHeight + height,
-              finalWidth: Math.max(acc.finalWidth, width),
-            }), {finalBuffer: Buffer.from([]), finalHeight: 0, finalWidth: 0});
+            const canvasData = buffers.reduce((acc, {data, width, height}) => {
+              if (!Buffer.isBuffer(data)) data = Buffer.from(data);
+              return ({
+                finalBuffer: Buffer.concat([acc.finalBuffer, data]),
+                finalHeight: acc.finalHeight + height,
+                finalWidth: Math.max(acc.finalWidth, width),
+              });
+            }, {finalBuffer: Buffer.from([]), finalHeight: 0, finalWidth: 0});
 
             const originalCanvasBuffer = thisArg.canvas.data;
             const originalCanvasWidth = thisArg.canvas.width;
