@@ -62,6 +62,7 @@ class PureImagePrinter {
     if (createCanvas) {
       this._externalPrintRaster = printFunctions.printRaster;
       this._externalPrintPng = printFunctions.printPng;
+      this._externalPrintPngBuffer = printFunctions.printPngBuffer;
       this._externalPrint = printFunctions.print;
       this.defaultPrintTarget = defaultPrintTarget;
       CanvasTxt.vAlign = 'top';
@@ -390,6 +391,13 @@ class PureImagePrinter {
     }
 
     const pngBuffer = await this._canvasToPngBuffer(this.canvas, this.currentPrintY);
+    if (this.defaultPrintTarget === 'pngBuffer' || target === 'pngBuffer') {
+      await this._externalPrintPngBuffer(pngBuffer);
+      await this._externalPrint();
+      this._reset();
+      return;
+    }
+
     const png = PNG.sync.read(pngBuffer);
 
     if (typeof this._externalPrintPng === 'function' && typeof this._externalPrint === 'function') {
