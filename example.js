@@ -2,10 +2,10 @@ const PureImagePrinter = require('./index');
 const {base64Image} = require("./example-material");
 
 const path = require('path');
+const pureImagePrinter = new PureImagePrinter(560);
 
 (async () => {
   async function printWithInstance(instanceName) {
-    const pureImagePrinter = new PureImagePrinter(560);
     console.time(instanceName);
     await pureImagePrinter.marginTop(4)
     await pureImagePrinter.drawLine()
@@ -169,12 +169,12 @@ const path = require('path');
     await pureImagePrinter.printToFile(path.resolve(`${__dirname}/example${instanceName}.png`)).then(async () => {
       console.timeEnd(instanceName);
       console.log('Printed');
-      await pureImagePrinter.cleanup();
+      // await pureImagePrinter.cleanup();
     });
   }
 
-  setTimeout(() => printWithInstance('1'), 1000);
-  // setTimeout(() => printWithInstance('2'), 2000);
+  await printWithInstance('1')
+  await printWithInstance('2')
   // setTimeout(() => printWithInstance('3'), 3000);
   // setTimeout(() => printWithInstance('4'), 4000);
   // setTimeout(() => printWithInstance('5'), 5000);

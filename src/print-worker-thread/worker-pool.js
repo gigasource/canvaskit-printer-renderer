@@ -37,10 +37,12 @@ const INDIVISIBLE_FUNCTIONS = [
 ];
 
 function applyWorkerPool(obj, keys) {
-  obj.divisibleCommands = [];
-  obj.indivisibleCommands = [];
-  obj.commandIndex = 0;
-
+  function reset() {
+    obj.divisibleCommands = [];
+    obj.indivisibleCommands = [];
+    obj.commandIndex = 0;
+  }
+  reset()
   let invert = false
   keys.forEach(key => {
     if (key.startsWith('_') || typeof obj[key] !== 'function' || key === 'constructor') return;
@@ -84,11 +86,10 @@ function applyWorkerPool(obj, keys) {
             thisArg.canvas.height = originalCanvasHeight;
             thisArg.currentPrintY = originalPrintY;
 
-            obj.commandIndex = 0;
+            reset()
           } else {
             await target.apply(thisArg, argArray);
-
-            obj.commandIndex = 0;
+            reset()
           }
 
           resolve();

@@ -3,8 +3,8 @@ const {applyWorkerPool} = require('./src/print-worker-thread/worker-pool');
 
 module.exports = new Proxy(PureImagePrinter, {
   construct(target, argArray) {
-    const width = argArray[0] || null;
-    const height = argArray[1] || null;
+    const width = argArray[0];
+    const height = argArray[1];
     const opts = argArray[2] || {};
 
     const newObj = new target(width, height, opts);

@@ -364,16 +364,16 @@ class PureImagePrinter {
     });
   }
 
-  async printToFile(outputFilePath) {
-    const currentCanvasHeight = this.canvas.height;
-    this.canvas.height = this.currentPrintY;
-
-    const writeStream = fs.createWriteStream(path.resolve(outputFilePath));
-    writeStream.on('finish', async () => {
-      this.canvas.height = currentCanvasHeight;
-    });
-
-    await PureImage.encodePNGToStream(this.canvas, writeStream);
+  printToFile(outputFilePath) {
+    return new Promise((res, rej) => {
+      this.canvas.height = this.currentPrintY;
+      const writeStream = fs.createWriteStream(path.resolve(outputFilePath));
+      writeStream.on('finish', async () => {
+        this._reset()
+        res()
+      });
+      PureImage.encodePNGToStream(this.canvas, writeStream);
+    })
   }
 
   async print(target) {
