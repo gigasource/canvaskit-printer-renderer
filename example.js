@@ -154,7 +154,9 @@ const pureImagePrinter = new PureImagePrinter(560);
     await pureImagePrinter.newLine()
 
     //test font
+    await pureImagePrinter.invert(true)
     await pureImagePrinter.println('Nguyễn Ngọc Dưỡng $€')
+    await pureImagePrinter.invert(false)
     await pureImagePrinter.bold(true)
     await pureImagePrinter.println('Nguyễn Ngọc Dưỡng $€')
     await pureImagePrinter.italic(true)

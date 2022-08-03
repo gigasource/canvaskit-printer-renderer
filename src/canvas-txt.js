@@ -196,6 +196,7 @@ const canvasTxt = {
       }
       // end foreach temptextarray
     })
+    console.log(this.lineHeight)
     const charHeight = this.lineHeight
       ? this.lineHeight
       : this.getTextHeight(ctx, mytext, style) //close approximation of height with width
@@ -220,6 +221,8 @@ const canvasTxt = {
     const textColor = invert ? "white" : "black"
     textarray.forEach(txtline => {
       txtline = txtline.trim()
+      const h = this.getTextHeight(ctx, txtline, style)
+      console.log( h, txtline, style)
       if (txtline && backgroundColor === 'black') {
         const estimateWidth = ctx.measureText(txtline).width
         ctx.fillStyle = backgroundColor
@@ -227,7 +230,8 @@ const canvasTxt = {
         if (this.align === 'center') xStart = x + width / 2 - estimateWidth / 2
         if (this.align === 'left') xStart = x
         if (this.align === 'right') xStart = x + width - estimateWidth
-        ctx.fillRect(xStart, txtY - charHeight, estimateWidth, charHeight + 3)
+        const paddingLeft = Math.min(xStart, fontSize / 4)
+        ctx.fillRect(xStart -paddingLeft, txtY - charHeight, paddingLeft + estimateWidth + fontSize / 4, charHeight + fontSize / 3)
       }
 
       ctx.fillStyle = textColor
