@@ -10,6 +10,7 @@ const workerPool = wkPool.pool(path.resolve(`${scriptDir}/worker-script.js`));
 
 // functions that can be divided to separated workers
 const DIVISIBLE_FUNCTIONS = [
+  'marginTop',
   'newLine',
   'drawLine',
   'tableCustom',

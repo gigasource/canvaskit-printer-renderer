@@ -7,7 +7,7 @@ const pureImagePrinter = new PureImagePrinter(560);
 (async () => {
   async function printWithInstance(instanceName) {
     console.time(instanceName);
-    await pureImagePrinter.marginTop(4)
+    await pureImagePrinter.marginTop(10)
     await pureImagePrinter.drawLine()
     await pureImagePrinter.alignCenter();
     // await pureImagePrinter.println('duong')
