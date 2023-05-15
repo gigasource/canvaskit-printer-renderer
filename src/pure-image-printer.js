@@ -19,29 +19,10 @@ const CANVAS_HEIGHT_EXTENSION = 500;
 // example: canvas height is 2500, if printY >= canvas height - CANVAS_HEIGHT_RESIZING_REMAINING (=2000) then resizing will happen
 const CANVAS_HEIGHT_RESIZING_REMAINING = 300;
 
-const fontInfo = {
-  normal: {
-    fontFilePath: path.resolve(__dirname + `/../assets/fonts/${BASE_FONT_FAMILY}.ttf`),
-    fontFamily: 'Verdana',
-  },
-  bold: {
-    fontFilePath: path.resolve(__dirname + `/../assets/fonts/${BASE_FONT_FAMILY}_Bold.ttf`),
-    fontFamily: 'Verdana_Bold',
-  },
-  italic: {
-    fontFilePath: path.resolve(__dirname + `/../assets/fonts/${BASE_FONT_FAMILY}_Italic.ttf`),
-    fontFamily: 'Verdana_Italic',
-  },
-  boldItalic: {
-    fontFilePath: path.resolve(__dirname + `/../assets/fonts/${BASE_FONT_FAMILY}_Bold_Italic.ttf`),
-    fontFamily: 'Verdana_Bold_Italic',
-  },
-}
-
-Object.keys(fontInfo).forEach(fontType => {
-  const {fontFilePath, fontFamily} = fontInfo[fontType];
-  PureImage.registerFont(fontFilePath, fontFamily).loadSync();
-});
+const fontFamilies = require('./font-families')
+Object.keys(fontFamilies).forEach(fontFamily => {
+  PureImage.registerFont(fontFamilies[fontFamily], fontFamily).loadSync();
+})
 
 class PureImagePrinter {
 
@@ -55,6 +36,7 @@ class PureImagePrinter {
 
   constructor(width, height, opts = {}) {
     if (height && typeof height === 'object') opts = height;
+    this.fontFamily = opts.fontFamily || BASE_FONT_FAMILY;
 
     const {printFunctions = {}, createCanvas = true, noResizing, autoAdjustFontsize = false, defaultPrintTarget} = opts;
 
@@ -514,8 +496,8 @@ class PureImagePrinter {
   _estimateLine(text, bold, layoutWidth) {
     if (typeof text !== 'string') text = text.toString();
     let fontFamily;
-    if (bold) fontFamily = fontInfo.bold.fontFamily
-    else fontFamily = fontInfo.normal.fontFamily
+    if (bold) fontFamily = this.fontFamily + '_Bold';
+    else fontFamily = this.fontFamily;
     CanvasTxt.font = fontFamily;
     CanvasTxt.fontSize = this.fontSize;
     return CanvasTxt.estimateLines(this.canvasContext, text, layoutWidth)
@@ -523,8 +505,8 @@ class PureImagePrinter {
 
   _measureText(text, bold) {
     let fontFamily
-    if (bold) fontFamily = fontInfo.bold.fontFamily
-    else fontFamily = fontInfo.normal.fontFamily
+    if (bold) fontFamily = this.fontFamily + '_Bold'
+    else fontFamily = this.fontFamily
     const curFont = CanvasTxt.curFont
     CanvasTxt.font = fontFamily
     CanvasTxt.fontSize = this.fontSize;
@@ -539,13 +521,13 @@ class PureImagePrinter {
     let fontFamily;
 
     if (this.fontBold && this.fontItalic) {
-      fontFamily = fontInfo.boldItalic.fontFamily;
+      fontFamily = this.fontFamily + '_Bold_Italic';
     } else if (this.fontBold) {
-      fontFamily = fontInfo.bold.fontFamily;
+      fontFamily = this.fontFamily + '_Bold';
     } else if (this.fontItalic) {
-      fontFamily = fontInfo.italic.fontFamily;
+      fontFamily = this.fontFamily + '_Italic';;
     } else {
-      fontFamily = fontInfo.normal.fontFamily;
+      fontFamily = this.fontFamily;
     }
 
     CanvasTxt.align = this.textAlign;

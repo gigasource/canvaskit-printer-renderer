@@ -100,7 +100,7 @@ function applyWorkerPool(obj, keys) {
   });
 }
 
-async function renderBuffers({printWidth, divisibleCommands, indivisibleCommands, opts: {autoAdjustFontsize}}) {
+async function renderBuffers({printWidth, divisibleCommands, indivisibleCommands, opts: {autoAdjustFontsize, fontFamily}}) {
   const commandsPerWorker = COMMANDS_PER_WORKER;
   let buffers = [];
 
@@ -118,7 +118,7 @@ async function renderBuffers({printWidth, divisibleCommands, indivisibleCommands
       .filter(e => e.commandIndex <= slicedCommands[slicedCommands.length - 1].commandIndex)
       .sort((e1, e2) => e1.commandIndex - e2.commandIndex);
 
-    buffers.push(execPrintTasks(workerCommands, currentInvert, printWidth, {autoAdjustFontsize}));
+    buffers.push(execPrintTasks(workerCommands, currentInvert, printWidth, {autoAdjustFontsize, fontFamily}));
 
     sliceIndex += commandsPerWorker;
   }
