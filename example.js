@@ -2,7 +2,7 @@ const PureImagePrinter = require('./index');
 const {base64Image} = require("./example-material");
 
 const path = require('path');
-const pureImagePrinter = new PureImagePrinter(560);
+const pureImagePrinter = new PureImagePrinter(560, undefined, {fontFamily: 'NotoSansSCVF'});
 
 (async () => {
   async function printWithInstance(instanceName) {
@@ -18,6 +18,7 @@ const pureImagePrinter = new PureImagePrinter(560);
     await pureImagePrinter.newLine();
     // await pureImagePrinter.setFontSize(14);
     await pureImagePrinter.println('A RESTAURANT NAME');
+    await pureImagePrinter.println('點心 Dim Sum')
 
     await pureImagePrinter.println('Maximilanstrabe 222 / Hofgraben 999');
     await pureImagePrinter.println('88888 Munchen');
