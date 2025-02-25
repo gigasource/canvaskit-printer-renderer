@@ -465,16 +465,32 @@ class PureImagePrinter {
     }
     if (inputType === 'buffer') {
       const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-      const JPEG_SIGNATURE = Buffer.from([255, 216, 255, 224, 0, 16, 74, 70]);
+      const JPEG_JFIF = Buffer.from([255, 216, 255, 224]);
+      const JPEG_EXIF = Buffer.from([255, 216, 255, 225]);
+      const JPEG_ICC = Buffer.from([255, 216, 255, 226]);
+      const JPEG_JP2 = Buffer.from([0, 0, 0, 12, 106, 80, 32, 32]);
+      const JPEG_J2K = Buffer.from([255, 79, 255, 81]);
+      const JPEG_XR = Buffer.from([73, 73, 188]);
+      const JPEG_PROGRESSIVE = Buffer.from([0xFF, 0xD8, 0xFF]);
       const imageReadStream = new Readable();
       imageReadStream.push(imageInput);
       imageReadStream.push(null);
-      if (imageInput.slice(0, 8).equals(PNG_SIGNATURE)) {
+      if (imageInput.slice(0, PNG_SIGNATURE.length).equals(PNG_SIGNATURE)) {
         imageData = await PureImage.decodePNGFromStream(imageReadStream)
-      } else if (imageInput.slice(0, 8).equals(JPEG_SIGNATURE)) {
+      } else if (imageInput.slice(0, JPEG_JFIF.length).equals(JPEG_JFIF)) {
+        imageData = await PureImage.decodeJPEGFromStream(imageReadStream)
+      } else if (imageInput.slice(0, JPEG_ICC.length).equals(JPEG_ICC)) {
+        imageData = await PureImage.decodeJPEGFromStream(imageReadStream)
+      } else if (imageInput.slice(0, JPEG_JP2.length).equals(JPEG_JP2)) {
+        imageData = await PureImage.decodeJPEGFromStream(imageReadStream)
+      } else if (imageInput.slice(0, JPEG_J2K.length).equals(JPEG_J2K)) {
+        imageData = await PureImage.decodeJPEGFromStream(imageReadStream)
+      } else if (imageInput.slice(0, JPEG_XR.length).equals(JPEG_XR)) {
+        imageData = await PureImage.decodeJPEGFromStream(imageReadStream)
+      } else if (imageInput.slice(0, JPEG_PROGRESSIVE.length).equals(JPEG_PROGRESSIVE)) {
         imageData = await PureImage.decodeJPEGFromStream(imageReadStream)
       } else {
-        console.warn('Not supported image format')
+        console.warn('Not supported image format', imageInput.slice(0, 8));
       }
     }
     const {width: imgWidth, height: imgHeight} = imageData
