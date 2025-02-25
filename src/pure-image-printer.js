@@ -464,10 +464,18 @@ class PureImagePrinter {
       imageData = await PureImage.decodePNGFromStream(fStream)
     }
     if (inputType === 'buffer') {
+      const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+      const JPEG_SIGNATURE = Buffer.from([255, 216, 255, 224, 0, 16, 74, 70]);
       const imageReadStream = new Readable();
       imageReadStream.push(imageInput);
       imageReadStream.push(null);
-      imageData = await PureImage.decodePNGFromStream(imageReadStream)
+      if (imageInput.slice(0, 8).equals(PNG_SIGNATURE)) {
+        imageData = await PureImage.decodePNGFromStream(imageReadStream)
+      } else if (imageInput.slice(0, 8).equals(JPEG_SIGNATURE)) {
+        imageData = await PureImage.decodeJPEGFromStream(imageReadStream)
+      } else {
+        console.warn('Not supported image format')
+      }
     }
     const {width: imgWidth, height: imgHeight} = imageData
     const scaledImgHeight = imgHeight / (imgWidth / this.originalCanvasWidth) * ratio
