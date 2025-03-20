@@ -1,19 +1,18 @@
 const path = require('path');
-const BASE_FONT_FAMILY = 'Verdana';
-
-const pwd = __dirname
-
-console.log('pwd', pwd)
 
 const fontFamilies = {
-  'Verdana': path.resolve(__dirname + `/../assets/fonts/${BASE_FONT_FAMILY}.ttf`),
-  'Verdana_Bold': path.resolve(__dirname + `/../assets/fonts/${BASE_FONT_FAMILY}_Bold.ttf`),
-  'Verdana_Italic': path.resolve(__dirname + `/../assets/fonts/${BASE_FONT_FAMILY}_Italic.ttf`),
-  'Verdana_Bold_Italic': path.resolve(__dirname + `/../assets/fonts/${BASE_FONT_FAMILY}_Bold_Italic.ttf`),
+  'Verdana': path.resolve(__dirname + `/../assets/fonts/Verdana.ttf`),
+  'Verdana_Bold': path.resolve(__dirname + `/../assets/fonts/Verdana_Bold.ttf`),
+  'Verdana_Italic': path.resolve(__dirname + `/../assets/fonts/Verdana_Italic.ttf`),
+  'Verdana_Bold_Italic': path.resolve(__dirname + `/../assets/fonts/Verdana_Bold_Italic.ttf`),
   'NotoSansSCVF': path.resolve(__dirname + `/../assets/fonts/NotoSansSC-Regular.ttf`),
   'NotoSansSCVF_Bold': path.resolve(__dirname + `/../assets/fonts/NotoSansSC-Regular.ttf`),
   'NotoSansSCVF_Italic': path.resolve(__dirname + `/../assets/fonts/NotoSansSC-Regular.ttf`),
   'NotoSansSCVF_Bold_Italic': path.resolve(__dirname + `/../assets/fonts/NotoSansSC-Regular.ttf`),
+  'Roboto_Condensed': path.resolve(__dirname + `/../assets/fonts/Roboto_Condensed.ttf`),
+  'Roboto_Condensed_Bold': path.resolve(__dirname + `/../assets/fonts/Roboto_Condensed_Bold.ttf`),
+  'Roboto_Condensed_Italic': path.resolve(__dirname + `/../assets/fonts/Roboto_Condensed_Italic.ttf`),
+  'Roboto_Condensed_Bold_Italic': path.resolve(__dirname + `/../assets/fonts/Roboto_Condensed_Bold_Italic.ttf`),
 }
 
 module.exports = fontFamilies
