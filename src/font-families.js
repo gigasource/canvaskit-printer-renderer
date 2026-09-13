@@ -9,6 +9,10 @@ const fontFamilies = {
   'Roboto_Condensed_Bold': path.resolve(__dirname + `/../assets/fonts/Roboto_Condensed_Bold.ttf`),
   'Roboto_Condensed_Italic': path.resolve(__dirname + `/../assets/fonts/Roboto_Condensed_Italic.ttf`),
   'Roboto_Condensed_Bold_Italic': path.resolve(__dirname + `/../assets/fonts/Roboto_Condensed_Bold_Italic.ttf`),
+  'Courier_New': path.resolve(__dirname + `/../assets/fonts/Courier_New.ttf`),
+  'Courier_New_Bold': path.resolve(__dirname + `/../assets/fonts/Courier_New_Bold.ttf`),
+  'Courier_New_Italic': path.resolve(__dirname + `/../assets/fonts/Courier_New_Italic.ttf`),
+  'Courier_New_Bold_Italic': path.resolve(__dirname + `/../assets/fonts/Courier_New_Bold_Italic.ttf`),
 }
 
 module.exports = fontFamilies
