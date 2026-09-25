@@ -158,7 +158,7 @@ class PureImagePrinter {
     if (autoAdjustWidth) {
       for (let i = 0; i < h; i++) {
         for (let j = 0; j < w; j++) {
-          data[i][j].text = data[i][j].text.trim()
+          data[i][j].text = (data[i][j].text != null ? String(data[i][j].text) : '').trimEnd()
         }
       }
       let totalPadding = colMetaData.reduce((a,b) => a + (b.padding || 0), 0)
