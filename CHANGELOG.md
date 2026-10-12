@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.0.91] - 2026-10-12
+## [0.0.92] - 2026-10-12
 
 ### Added
 - **Cell-level `paddingLeft`**: Added support for `paddingLeft` (space count) directly on cell objects, allowing item modifiers to maintain consistent multi-line indentation across word-wrapped lines.
@@ -21,6 +21,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Safe Cell Text Normalization**: Added null/undefined guards before trimming text in `autoAdjustWidth` to avoid runtime exceptions on sparse cell matrices.
 - **Input Immutability**: Shallow-cloned caller input data matrices in `prepareAdvancedTable` to avoid mutating caller `tableData.data` objects in-place.
 - **Bold Font Fallback**: Clarified registered font requirement (`src/font-families.js`) to prevent silent fallbacks to regular weight fonts.
+
+## [0.0.91] - 2026-10-12
+
+### Changed
+- Release v0.0.91 package configuration.
 
 ## [0.0.90] - 2026-10-12
 
