@@ -148,114 +148,118 @@ class PureImagePrinter {
     this.canvasContext.drawLine({start: {x: 0, y}, end: {x: this.originalCanvasWidth, y}});
   }
 
-  advancedTableCustom(tableData, autoAdjustWidth) {
-    //table header => 1 row
-
-    const {metaData = {colMetaData: [], rowMetaData: []}, data} = tableData
-    const {colMetaData, rowMetaData} = metaData
+  prepareAdvancedTable(tableData, autoAdjustWidth) {
+    const {metaData = {colMetaData: [], rowMetaData: []}, data: rawData = []} = tableData
+    const colMetaData = (metaData.colMetaData || []).map(c => ({...c}))
+    const rowMetaData = metaData.rowMetaData || []
+    if (!rawData.length || !rawData[0].length) {
+      return {colMetaData, rows: []}
+    }
+    const data = rawData.map(row => (row || []).map(cell => ({...cell})))
     let w = data[0].length
     let h = data.length
     if (autoAdjustWidth) {
       for (let i = 0; i < h; i++) {
         for (let j = 0; j < w; j++) {
-          data[i][j].text = (data[i][j].text != null ? String(data[i][j].text) : '').trimEnd()
+          if (data[i][j] && data[i][j].text != null) {
+            data[i][j].text = String(data[i][j].text).trimEnd()
+          }
         }
       }
-      let totalPadding = colMetaData.reduce((a,b) => a + (b.padding || 0), 0)
-      let totalFixed = 0
-      let cntFixed = 0
-      const lowPriorityEstimates = []
-      let highPriorityMaxWidths = []
+
+      while (colMetaData.length < w) {
+        colMetaData.push({})
+      }
+
+      let totalPadding = 0
       for (let colIdx = 0; colIdx < w; colIdx++) {
-        const {priority} = colMetaData[colIdx]
-        if (priority === 'HIGH') {
-          const maxLen = Math.max.apply(Math, data.map(row => this._measureText(row[colIdx].text, row[colIdx].bold).width))
-          highPriorityMaxWidths.push(maxLen / this.printWidth + 0.01)
-          totalFixed += maxLen / this.printWidth + 0.01
-          // cntFixed ++
-        } else {
-          let row = []
-          for (let i = 0; i < 20; i++) {
-            let tmp = []
-            for (let rowIdx = 0; rowIdx < h; rowIdx++) {
-              tmp.push(this._estimateLine(data[rowIdx][colIdx].text, data[rowIdx][colIdx].bold, this.printWidth * (i + 1) * 0.05))
-            }
-            // let v = tmp.reduce((a, b) => a + b, 0)
-            let v = Math.max.apply(Math, tmp)
-            for (let rowIdx = 0; rowIdx < h; rowIdx++) {
-              for (let _rowIdx = 0; _rowIdx < h; _rowIdx++) {
-                v += Math.abs(tmp[rowIdx] - tmp[_rowIdx]) / 2
+        if (colMetaData[colIdx] && colMetaData[colIdx].padding) {
+          totalPadding += colMetaData[colIdx].padding
+        }
+      }
+
+      let totalHighWidth = 0
+      const flexibleColIndices = []
+
+      for (let colIdx = 0; colIdx < w; colIdx++) {
+        const meta = colMetaData[colIdx] || {}
+        if (meta.priority === 'HIGH') {
+          let maxLen = 0
+          for (let rowIdx = 0; rowIdx < h; rowIdx++) {
+            const cell = data[rowIdx][colIdx]
+            if (cell && cell.text) {
+              const textWidth = this._measureText(cell.text, cell.bold).width
+              if (textWidth > maxLen) {
+                maxLen = textWidth
               }
             }
-            row.push(v)
           }
-          lowPriorityEstimates.push(row)
-        }
-      }
-
-      let optimizedValue = 10000000
-      let optimizedWidths
-
-      function getValue(data, widths) {
-        let res = 0
-        for (let i = 0; i < data.length; i++) {
-          res += data[i][widths[i]]
-        }
-        return res
-      }
-
-      function getOptimizedWidths(data, idx, remain, widths) {
-        if (idx === data.length) {
-          const value = getValue(data, widths)
-          // console.log(widths, value)
-          if (value < optimizedValue) {
-            optimizedValue = value
-            optimizedWidths = [...widths]
-          }
+          const colWidth = maxLen / this.printWidth + 0.01
+          colMetaData[colIdx].width = colWidth
+          totalHighWidth += colWidth
         } else {
-          if (idx === data.length - 1) {
-            if (remain < 0.05) return
-            widths.push(Math.floor((remain - 0.05) / 0.05))
-            getOptimizedWidths(data, idx + 1, 0, widths)
-            widths.pop()
-          } else {
-            for (let i = 0; i < remain / 0.05; i++) {
-              widths.push(i)
-              getOptimizedWidths(data, idx + 1, remain - (i + 1) * 0.05, widths)
-              widths.pop()
-            }
-          }
+          flexibleColIndices.push(colIdx)
         }
       }
 
-      getOptimizedWidths(lowPriorityEstimates, 0, 1 - totalFixed - totalPadding, [])
-      let cur = 0
-      let cur1 = 0
-      let total = 0
-      for (let j = 0; j < w; j++) {
-        const {priority} = colMetaData[j]
-        if (priority !== 'HIGH') {
-          colMetaData[j].width = Math.round(((optimizedWidths[cur++] + 1) * 0.05) * 100) / 100
-        } else {
-          colMetaData[j].width = highPriorityMaxWidths[cur1++]
+      const flexibleCount = flexibleColIndices.length
+      if (flexibleCount > 0) {
+        const remainingWidth = Math.max(0, 1 - totalPadding - totalHighWidth)
+        const widthPerCol = remainingWidth / flexibleCount
+        for (let idx = 0; idx < flexibleCount; idx++) {
+          const colIdx = flexibleColIndices[idx]
+          colMetaData[colIdx].width = widthPerCol
         }
-        total += colMetaData[j].width
       }
-      colMetaData[w - 1].width += 1 - totalPadding - total //make sure total widths = 1
-      // console.log(optimizedValue, optimizedWidths, lowPriorityEstimates)
     }
 
+    const rows = []
     for (let i = 0; i < h; i++) {
       const rowData = []
-      for(let j = 0 ; j < w; j++) {
-        rowData.push({...colMetaData[j], ...data[i][j]})
-        if (colMetaData[j].padding) {
+      for (let j = 0; j < w; j++) {
+        const cell = data[i][j] || {}
+        let cellText = cell.text != null ? String(cell.text) : ''
+
+        if (cell.paddingLeft && typeof cell.paddingLeft === 'number' && cell.paddingLeft > 0) {
+          const paddingSpaces = ' '.repeat(cell.paddingLeft)
+          const colWidth = (colMetaData[j] && colMetaData[j].width) || (1 / w)
+          const colLayoutWidth = this.printWidth * colWidth
+          const padWidth = this._measureText(paddingSpaces, cell.bold).width
+          const effectiveWidth = Math.max(0, colLayoutWidth - padWidth)
+
+          let fontFamily = this.fontFamily
+          if (cell.bold) fontFamily = this.fontFamily + '_Bold'
+          CanvasTxt.font = fontFamily
+          CanvasTxt.fontSize = this.fontSize
+          this.canvasContext.font = `${this.fontSize}px ${fontFamily}`
+
+          const paragraphs = cellText.split('\n')
+          cellText = paragraphs.map(p => {
+            const rawLines = CanvasTxt.splitTextIntoLines(this.canvasContext, p.trim(), effectiveWidth)
+            return rawLines.map(line => paddingSpaces + line).join('\n')
+          }).join('\n')
+        }
+
+        rowData.push({...colMetaData[j], ...cell, text: cellText})
+        if (colMetaData[j] && colMetaData[j].padding) {
           rowData.push({text: '', width: colMetaData[j].padding})
         }
       }
-      this.tableCustom(rowData)
       const {borderBottom} = rowMetaData[i] || {}
-      if (borderBottom) {
+      rows.push({
+        columns: rowData,
+        borderBottom: Boolean(borderBottom)
+      })
+    }
+
+    return {colMetaData, rows}
+  }
+
+  advancedTableCustom(tableData, autoAdjustWidth) {
+    const {rows} = this.prepareAdvancedTable(tableData, autoAdjustWidth)
+    for (const row of rows) {
+      this.tableCustom(row.columns)
+      if (row.borderBottom) {
         this.drawLine()
       }
     }
