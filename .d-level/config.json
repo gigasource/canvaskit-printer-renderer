@@ -1,0 +1,13 @@
+{
+  "project": "@gigasource/pureimage-printer-renderer",
+  "language": "javascript",
+  "verification": {
+    "testCommand": "npm test",
+    "lintCommand": "",
+    "typecheckCommand": ""
+  },
+  "protectedPaths": [
+    ".git",
+    ".idea"
+  ]
+}
