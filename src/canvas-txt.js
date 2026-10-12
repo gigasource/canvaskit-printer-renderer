@@ -15,7 +15,7 @@ const canvasTxt = {
   /**
    *
    * @param {CanvasRenderingContext2D} ctx
-   * @param {string} mytext
+   * @param {string} text
    * @param {number} x
    * @param {number} y
    * @param {number} width
@@ -29,70 +29,81 @@ const canvasTxt = {
     ctx.font = style.trim();
     return ctx.measureText(text)
   },
-  estimateLines: function(ctx, mytext, width) {
+
+  splitWordByWidth: function(ctx, word, width) {
+    const parts = []
+    let current = word
+    while (ctx.measureText(current).width > width) {
+      let splitIdx = current.length - 1
+      while (splitIdx > 1 && ctx.measureText(current.substring(0, splitIdx)).width > width) {
+        splitIdx--
+      }
+      parts.push(current.substring(0, splitIdx))
+      current = current.substring(splitIdx)
+    }
+    parts.push(current)
+    return parts
+  },
+
+  splitTextIntoLines: function(ctx, text, width) {
+    const lines = []
+    const spaceWidth = this.justify ? ctx.measureText(SPACE).width : 0
+
+    const pushLine = (line) => {
+      lines.push(this.justify ? this.justifyLine(ctx, line, spaceWidth, SPACE, width) : line)
+    }
+
+    const paragraphs = text.split('\n')
+    for (let p = 0; p < paragraphs.length; p++) {
+      const paragraph = paragraphs[p]
+      if (ctx.measureText(paragraph).width <= width) {
+        lines.push(paragraph)
+        continue
+      }
+
+      let currentLine = ''
+      let isFirstWord = true
+
+      const words = paragraph.split(' ')
+      for (let w = 0; w < words.length; w++) {
+        const word = words[w]
+        const testLine = isFirstWord ? word : `${currentLine} ${word}`
+
+        if (ctx.measureText(testLine).width <= width) {
+          currentLine = testLine
+          isFirstWord = false
+        } else {
+          if (!isFirstWord) {
+            pushLine(currentLine)
+            currentLine = word
+          }
+
+          const parts = this.splitWordByWidth(ctx, currentLine, width)
+          for (let i = 0; i < parts.length - 1; i++) {
+            pushLine(parts[i])
+          }
+          currentLine = parts[parts.length - 1]
+          isFirstWord = false
+        }
+      }
+
+      if (!isFirstWord) pushLine(currentLine)
+    }
+
+    return lines
+  },
+
+  estimateLines: function(ctx, text, width) {
     // Parse all to integers
     const { fontStyle, fontVariant, fontWeight, fontSize, font } = this
     const style = `${fontStyle} ${fontVariant} ${fontWeight} ${fontSize}px ${font}`
     ctx.font = style.trim();
-    const firstCharacterWidth = ctx.measureText('M').width;
-    if (firstCharacterWidth >= width) {
-      return 10000
-    }
-    //added one-line only auto linebreak feature
-    let textarray = []
-    let temptextarray = mytext.split('\n')
-    const spaceWidth = this.justify ? ctx.measureText(SPACE).width : 0
-    temptextarray.forEach(txtt => {
-      let textwidth = ctx.measureText(txtt).width
-      if (textwidth <= width) {
-        textarray.push(txtt)
-      } else {
-        let temptext = txtt
-        let linelen = width
-        let textlen
-        let textpixlen
-        let texttoprint
-        textwidth = ctx.measureText(temptext).width
-        while (textwidth > linelen) {
-          textlen = 0
-          textpixlen = 0
-          texttoprint = ''
-          while (textpixlen < linelen) {
-            textlen++
-            texttoprint = temptext.substr(0, textlen)
-            textpixlen = ctx.measureText(temptext.substr(0, textlen)).width
-          }
-          // Remove last character that was out of the box
-          textlen--
-          texttoprint = texttoprint.substr(0, textlen)
-          //if statement ensures a new line only happens at a space, and not amidst a word
-          const backup = textlen
-          if (temptext.substr(textlen, 1) != ' ') {
-            while (temptext.substr(textlen, 1) != ' ' && textlen != 0) {
-              textlen--
-            }
-            if (textlen == 0) {
-              textlen = backup
-            }
-            texttoprint = temptext.substr(0, textlen)
-          }
-
-          texttoprint = this.justify
-            ? this.justifyLine(ctx, texttoprint, spaceWidth, SPACE, width)
-            : texttoprint
-
-          temptext = temptext.substr(textlen)
-          textwidth = ctx.measureText(temptext).width
-          textarray.push(texttoprint)
-        }
-        if (textwidth > 0) {
-          textarray.push(temptext)
-        }
-      }
-    })
-    return textarray.length
+    // Rely on splitTextIntoLines to handle extremely narrow widths natively
+    
+    return this.splitTextIntoLines(ctx, text, width).length
   },
-  drawText: function(ctx, mytext, x, y, width, height, invert) {
+  
+  drawText: function(ctx, text, x, y, width, height, invert) {
     // Parse all to integers
     ;[x, y, width, height] = [x, y, width, height].map(el => parseInt(el))
 
@@ -132,7 +143,7 @@ const canvasTxt = {
       ctx.textAlign = 'center'
     }
 
-    const firstCharacterWidth = ctx.measureText(mytext.substr(0, 1)).width;
+    const firstCharacterWidth = ctx.measureText(text.substr(0, 1)).width;
     if (firstCharacterWidth >= width) {
       width = Math.floor(firstCharacterWidth) + 1;
       xEnd = x + width;
@@ -141,65 +152,12 @@ const canvasTxt = {
       else if (this.align !== 'right' && this.align !== 'left') textanchor = Math.floor(x + width / 2);
     }
 
-    //added one-line only auto linebreak feature
-    let textarray = []
-    let temptextarray = mytext.split('\n')
+    let lines = this.splitTextIntoLines(ctx, text, width)
 
-    const spaceWidth = this.justify ? ctx.measureText(SPACE).width : 0
-
-    temptextarray.forEach(txtt => {
-      let textwidth = ctx.measureText(txtt).width
-      if (textwidth <= width) {
-        textarray.push(txtt)
-      } else {
-        let temptext = txtt
-        let linelen = width
-        let textlen
-        let textpixlen
-        let texttoprint
-        textwidth = ctx.measureText(temptext).width
-        while (textwidth > linelen) {
-          textlen = 0
-          textpixlen = 0
-          texttoprint = ''
-          while (textpixlen < linelen) {
-            textlen++
-            texttoprint = temptext.substr(0, textlen)
-            textpixlen = ctx.measureText(temptext.substr(0, textlen)).width
-          }
-          // Remove last character that was out of the box
-          textlen--
-          texttoprint = texttoprint.substr(0, textlen)
-          //if statement ensures a new line only happens at a space, and not amidst a word
-          const backup = textlen
-          if (temptext.substr(textlen, 1) != ' ') {
-            while (temptext.substr(textlen, 1) != ' ' && textlen != 0) {
-              textlen--
-            }
-            if (textlen == 0) {
-              textlen = backup
-            }
-            texttoprint = temptext.substr(0, textlen)
-          }
-
-          texttoprint = this.justify
-            ? this.justifyLine(ctx, texttoprint, spaceWidth, SPACE, width)
-            : texttoprint
-
-          temptext = temptext.substr(textlen)
-          textwidth = ctx.measureText(temptext).width
-          textarray.push(texttoprint)
-        }
-        if (textwidth > 0) {
-          textarray.push(temptext)
-        }
-      }
-      // end foreach temptextarray
-    })
     const charHeight = this.lineHeight
       ? this.lineHeight
-      : this.getTextHeight(ctx, mytext, style) //close approximation of height with width
-    const vheight = charHeight * (textarray.length - 1)
+      : this.getTextHeight(ctx, text, style) //close approximation of height with width
+    const vheight = charHeight * (lines.length - 1)
     const negoffset = vheight / 2
 
     let debugY = y
@@ -218,11 +176,11 @@ const canvasTxt = {
 
     const backgroundColor = invert ? "black" : "white"
     const textColor = invert ? "white" : "black"
-    textarray.forEach(txtline => {
-      txtline = txtline.trim()
-      const h = this.getTextHeight(ctx, txtline, style)
-      if (txtline && backgroundColor === 'black') {
-        const estimateWidth = ctx.measureText(txtline).width
+    lines.forEach(line => {
+      line = line.trimEnd()
+      const h = this.getTextHeight(ctx, line, style)
+      if (line && backgroundColor === 'black') {
+        const estimateWidth = ctx.measureText(line).width
         ctx.fillStyle = backgroundColor
         let xStart
         if (this.align === 'center') xStart = x + width / 2 - estimateWidth / 2
@@ -233,7 +191,7 @@ const canvasTxt = {
       }
 
       ctx.fillStyle = textColor
-      ctx.fillText(txtline, textanchor, txtY)
+      ctx.fillText(line, textanchor, txtY)
       txtY += charHeight
     })
 
